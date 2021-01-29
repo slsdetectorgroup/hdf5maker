@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hdfmaker.io import read_master_file, _guess_geometry
+from hdf5maker.io import read_master_file, _guess_geometry
 
 def test_read_master_file():
     fpath = Path(__file__).parent / "data/sample_master_2.raw"

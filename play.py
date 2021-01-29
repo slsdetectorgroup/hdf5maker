@@ -1,36 +1,77 @@
-from hdfmaker.io import *
+import hdf5plugin
+import h5py
 from pathlib import Path
 import numpy as np
-from sls_detector_tools.plot import imshow
-import cbf
-
-import matplotlib.pyplot as plt
-plt.ion()
-# # master = read_master_file('tests/data/sample_master.raw')
-path = Path('/home/l_frojdh/data/1M')
-# data, header, master = load_raw(path/'calibration',3, shift=0)
-# # data, header, master = load_raw('/home/l_frojdh/data/quad/run',3)
-
-# # arr = np.zeros(4, dtype= frame_header_dt)
-
-# with open(path/'calibration_d3_f0_2.raw') as f:
-#     h = read_frame_header(f)
+# from sls_detector_tools.plot import imshow
+# from sls_detector_tools.hdf5 import save
 
 
-# from sls_detector_tools.io import load_frame
-# data = load_frame('/home/l_frojdh/data/quad/run',3)
-# img = data[0]
 
-# fig, ax = plt.subplots(figsize = (16,10))
-# im = ax.imshow(img)
-# im.set_clim(0,1e4)
-# im.set_clim(0,5)
+from hdfmaker import EigerRawFileReader
 
-# c = cbf.read("/home/l_frojdh/data/1M/calibration_00003_00001.cbf")
-# ax, im = imshow(c.data)
-# im.set_clim(0,1e4)
+path = Path('/home/l_frojdh/tmp/1M/')
+raw_file = EigerRawFileReader(path/'test', 1)
+image = raw_file.read()
+image = image.reshape(1,*image.shape)
+mask = raw_file.module_gaps.copy()
 
 
-from hdfmaker import RawFileReader
 
-f = RawFileReader(path/'calibration', 2)
+
+def string_dt(s):
+    tid = h5py.h5t.C_S1.copy()
+    tid.set_size(len(s))
+    return h5py.Datatype(tid)
+
+def create_string_attr(obj, key, value):
+    if value[-1] != '\x00':
+        value += '\x00'
+    print(f'{key=}, {value=}')
+    obj.attrs.create(key, value, dtype = string_dt(value))
+         
+#Generate the individual files 
+start = 1
+stop = 6
+base = 'hoi'
+
+img_nr = 1
+for i in range(start,stop,1):
+    fpath = path/f'{base}_data_{i:06d}.h5'
+    print(fpath)
+    f = h5py.File(fpath, 'w')
+    nxentry = f.create_group("entry")
+    create_string_attr(nxentry, 'NX_class', 'NXentry')
+    nxdata = nxentry.create_group("data")
+    create_string_attr(nxdata, 'NX_class', 'NXdata')
+    ds = nxdata.create_dataset("data", 
+                                shape = (10,image.shape[1], image.shape[2]),
+                                dtype = image.dtype,
+                                maxshape = (None, image.shape[1], image.shape[2]),
+                                # chunks = image.shape, 
+                                **hdf5plugin.Bitshuffle(nelems=0, lz4=True))
+
+    for j in range(10):
+        ds[j] = np.zeros((1064,1030))+j
+
+    ds.attrs["image_nr_low"] = np.int32(img_nr)
+    ds.attrs["image_nr_high"] = np.int32(img_nr+9)
+    img_nr+=10
+    
+    
+
+    f.close()
+
+
+#Generate master file
+with h5py.File(path/f"{base}_master.h5", 'w') as f:
+    nxentry = f.create_group("entry")
+    create_string_attr(nxentry, 'NX_class', 'NXentry')
+    nxdata = nxentry.create_group("data")
+    create_string_attr(nxdata, 'NX_class', 'NXdata')
+    for i in range(start, stop, 1):
+        f[f'entry/data/data_{i:06d}'] = h5py.ExternalLink(f'{base}_data_{i:06d}.h5', 'entry/data/data')
+
+    nxentry.create_group("instrument/data")
+    inst = nxentry.create_group("instrument/detector/detectorSpecific")
+    inst.create_dataset('pixel_mask', data = mask.astype(np.uint8), **hdf5plugin.Bitshuffle(nelems=0, lz4=True))
+
