@@ -1,10 +1,30 @@
 
-from .io import read_master_file, frame_header_dt, to_dtype
+from .io import read_master_file, to_dtype
 import numpy as np
 from pathlib import Path
 import os
 
+
+frame_header_dt = np.dtype([('Frame Number', 'u8'), 
+                   ('SubFrame Number/ExpLength', 'u4'), 
+                   ('Packet Number', 'u4'), 
+                   ('Bunch ID', 'u8'),
+                   ('Timestamp', 'u8'),
+                   ('Module Id', 'u2'),
+                   ('Row', 'u2'),
+                   ('Column', 'u2'),
+                   ('Reserved', 'u2'),
+                   ('Debug', 'u4'),
+                   ('Round Robin Number', 'u2'),
+                   ('Detector Type', 'u1'),
+                   ('Header Version', 'u1'),
+                   ('Packets Caught Mask', 'V64'),
+                   ])
+
 def get_module_mask():
+    """
+    Selects real pixels from module with gap pixels
+    """
     module_mask = np.zeros((514,1030), dtype = np.bool)
     module_mask[0:256,    0:256] = True
     module_mask[0:256,  258:514] = True
@@ -25,10 +45,12 @@ def split_counts(image):
         b = a-3
         top = image[a]/2
         bottom = image[b]/2
-        image[a] = np.ceil(top)
-        image[a-1] = np.floor(top)
-        image[b] = np.ceil(bottom)
-        image[b+1] = np.floor(bottom)
+        r = np.random.randint(0, 2, top.size)
+        image[a] = top + r *.5
+        image[a-1] = top + (1-r) * .5
+        r = np.random.randint(0, 2, bottom.size)
+        image[b] = bottom + r * .5
+        image[b+1] = bottom + (1-r) * .5
         row-=514+36
     while col>0:
         for c in [256,514,772]:
@@ -36,35 +58,14 @@ def split_counts(image):
             b = col-(c+3)
             left = image[:,a]/2
             right = image[:,b]/2
-            image[:,a] = np.ceil(left)
-            image[:,a-1] = np.floor(left)
-            image[:,b] =np.ceil(right)
-            image[:,b+1] = np.floor(right)
+            r = np.random.randint(0, 2, left.size)
+            image[:,a] = left + r * .5
+            image[:,a-1] = left + (1-r) * .5
+            r = np.random.randint(0, 2, right.size)
+            image[:,b] =right + r * .5
+            image[:,b+1] = right + (1-r) * .5
         col-=1030
     return image
-
-
-def read_frame_header(f):
-    return np.fromfile(f, count=1, dtype = frame_header_dt)
-
-def read_frame(f, dr):
-    """
-    Read a single frame from an open file
-    """
-    if dr in [8,16,32]:
-        dt = np.dtype( 'uint{:d}'.format(dr) )
-        return np.fromfile(f, dtype = dt, count = 256*512).reshape((256,512))
-    elif dr == 4:
-        dt = np.dtype('uint8')
-        tmp = np.fromfile(f, dtype = dt, count = 256*256)
-        data = np.zeros( tmp.size * 2, dtype = tmp.dtype )
-        data[0::2] = np.bitwise_and(tmp, 0x0f)
-        data[1::2] = np.bitwise_and(tmp >> 4, 0x0f)
-        print('shape', data.shape)
-        return data.reshape((256,512))
-    else:
-        raise ValueError(f"Unknown dynamic range: {dr}")
-
 
 def calculate_size_and_slices(geo):
     dt = np.int
@@ -111,15 +112,68 @@ def calculate_size_and_slices(geo):
 class RawDataFile:
     def __init__(self, fname, frame_size, dr, frames_per_file):
         self.dr = dr
+        self.file_index = 0
+        self.fname = Path(fname)
+        self.base, _, self.end = self.fname.name.rsplit('_', 2)
         self._f = open(fname, 'rb')
         self.h0 = self.read_frame_header()
         self._f.seek(0, os.SEEK_SET)
         self.rows, self.cols = frame_size
         self.n_elements = self.rows*self.cols
+        self.databytes = self.n_elements * self.dr // 8
         self.total_frames = sum(frames_per_file)
+        self.frames_per_file = np.array(frames_per_file)
+        self._edge = np.cumsum(self.frames_per_file)
         self.current_frame = 0
-
         self.flip_rows = self.h0['Row'] % 2 == 1
+
+    def _next_file_name(self):
+        self.file_index += 1
+        return self._file_name_from_index(self.file_index)
+
+    def _file_name_from_index(self, file_index):
+         return self.fname.parent/f'{self.base}_f{file_index}_{self.end}'
+
+    def _file_index_from_frame_number(self, frame_number):
+        for i, image_nr_high in enumerate(self._edge):
+            if frame_number < image_nr_high:
+                return i
+
+    def open_next_file(self):
+        self.open_file(self._next_file_name())
+
+    def open_file(self, fname):
+        self._f.close()
+        self.fname = fname
+        print(f"Opening: {self.fname}")
+        self._f = open(self.fname, 'rb')
+
+    def close(self):
+        self._f.close()
+
+
+    def seek(self, n_frames):
+        #no need do check already done at top level? 
+        frame_number = self.current_frame+n_frames
+        print(f'Looking for frame: {frame_number}')
+
+        i = self._file_index_from_frame_number(frame_number)
+        if i != self.file_index:
+            self.open_file(self._file_name_from_index(i))
+            if i>0:
+                self.current_frame = self._edge[i-1]
+            else: 
+                self.current_frame = 0 #We opened the first file
+        print(f'Now at {self.current_frame}')
+
+        frames_to_seek = frame_number - self.current_frame
+        n_bytes = (frame_header_dt.itemsize+self.databytes)*frames_to_seek
+        
+        print(f'Moving forward: {frames_to_seek} frames')
+        if n_bytes != 0:
+            self._f.seek(n_bytes)
+            self.current_frame += frames_to_seek
+    
 
     def read(self, n_frames = -1):
         #check if we can read 
@@ -127,12 +181,16 @@ class RawDataFile:
             n_frames = self.total_frames
 
         if n_frames > self.total_frames - self.current_frame:
-            raise ValueError("Not enough frames left in file")
+            raise ValueError("Not enough frames left to read")
 
         header = np.zeros(n_frames, dtype = frame_header_dt)
         data = np.zeros((n_frames, self.rows, self.cols))
 
         for i in range(n_frames):
+            #open next file only if a read is going to happen
+            if self.current_frame == self._edge[self.file_index]:
+                self.open_next_file()
+
             header[i] = self.read_frame_header()
             data[i] = self.read_frame()
             self.current_frame += 1
@@ -171,9 +229,10 @@ class RawDataFile:
 class EigerRawFileReader:
     module_mask = get_module_mask()
 
-    def __init__(self, fname):
+    def __init__(self, fname,  redistribute = True):
         fname = Path(fname)
         self.fname = fname
+        self.redistribute = redistribute
         self.master = read_master_file(self.fname)
         self.base, self.run_id = parse_raw_fname(self.fname)
         self.default_value = 0 #used for module gaps
@@ -182,15 +241,16 @@ class EigerRawFileReader:
         self.dt = to_dtype(self.master['Dynamic Range'])
         self.dr = self.master['Dynamic Range']
         self.total_frames = self.master['Total Frames']
+        self.current_frame = 0
         self.max_frames_per_file = self.master['Max Frames Per File']
         self.file_geometry = self.master['Pixels'][::-1]
         # self.n_files = -(-self.total_frames // self.max_frames_per_file) #-(-a // b)
-        self.frames = get_frames_per_file(self.total_frames, self.max_frames_per_file)
+        self.frames_per_file = get_frames_per_file(self.total_frames, self.max_frames_per_file)
         self._fid = 0
         
         #open the first files
         self._raw_file_names = [f'{self.base}_d{i}_f{self._fid}_{self.run_id}.raw' for i in range(self.master['nmod']*2)]
-        self.files = [RawDataFile(f, self.file_geometry, self.dr, self.frames) for f in self._raw_file_names]
+        self.files = [RawDataFile(f, self.file_geometry, self.dr, self.frames_per_file) for f in self._raw_file_names]
         self.find_geometry()
 
         self.image_size, self._ports, self._modules = calculate_size_and_slices(self._raw_pixels)
@@ -203,7 +263,19 @@ class EigerRawFileReader:
         for mod in self._modules:
             self.module_gaps[mod] = False
 
+    def seek(self, n_frames):
+        frames_left = self.total_frames-self.current_frame
+        if n_frames > frames_left:
+            raise ValueError(f"Cannot advance {n_frames} with only {frames_left} frames left")
 
+        for f in self.files:
+            f.seek(n_frames)
+
+        self.current_frame += n_frames
+
+    def close(self):
+        for f in self.files:
+            f.close()
 
     def find_geometry(self):
         """
@@ -238,8 +310,10 @@ class EigerRawFileReader:
 
         
             image[i][self.mask] = raw_image.flat
-            image[i] = split_counts(image[i])
+            if self.redistribute:
+                image[i] = split_counts(image[i])
             image[i][self.module_gaps] = self.default_value
+        self.current_frame += n_frames
         return image
 
 
