@@ -56,7 +56,7 @@ def get_version():
 
 
 setuptools.setup(
-    name="hdf5maker-experimental-YOUR-USERNAME-HERE", # Replace with your own username
+    name="hdf5maker",
     version= get_version(),
     author="Erik Frojdh",
     author_email="erik.frojdh@psi.ch",
@@ -67,7 +67,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GPL License",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
