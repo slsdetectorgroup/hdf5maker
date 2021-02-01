@@ -23,9 +23,8 @@ def get_version():
             print('Unable to get version number from git tags')
             exit(1)
 
-        # PEP 386 compatibility
         if '-' in version:
-            version = '.post'.join(version.split('-')[:2])
+            version = version.split('-')[0]
 
         # Don't declare a version "dirty" merely because a time stamp has
         # changed. If it is dirty, append a ".dev1" suffix to indicate a
