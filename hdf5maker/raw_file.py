@@ -25,7 +25,7 @@ def get_module_mask():
     """
     Selects real pixels from module with gap pixels
     """
-    module_mask = np.zeros((514,1030), dtype = np.bool)
+    module_mask = np.zeros((514,1030), dtype = np.bool_)
     module_mask[0:256,    0:256] = True
     module_mask[0:256,  258:514] = True
     module_mask[0:256,  516:772] = True
@@ -249,11 +249,11 @@ class EigerRawFileReader:
 
         self.image_size, self._ports, self._modules = calculate_size_and_slices(self._raw_pixels)
         
-        self.mask = np.zeros(self.image_size, dtype=np.bool)
+        self.mask = np.zeros(self.image_size, dtype=np.bool_)
         for mod in self._modules:
             self.mask[mod] = self.module_mask
 
-        self.module_gaps = np.ones(self.image_size, dtype=np.bool)
+        self.module_gaps = np.ones(self.image_size, dtype=np.bool_)
         for mod in self._modules:
             self.module_gaps[mod] = False
 

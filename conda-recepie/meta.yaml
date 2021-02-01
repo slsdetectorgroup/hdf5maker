@@ -1,18 +1,11 @@
-{% set name = "hdf5maker" %}
-{% set version = "0.1" %}
 
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: hdf5maker
+  version: "{{ load_setup_py_data().version }}"
   script: build.sh
 
 source:
   path: ..
-
-
-# build:
-#   number: 0
-#   script: build.sh
 
 requirements:
   host:
@@ -29,7 +22,7 @@ test:
     - hdf5maker
 
 about:
-  home: https://palletsprojects.com/p/click/
-  license: BSD
-  license_family: BSD
-  summary: Composable command line interface toolkit
+  home: https://github.com/slsdetectorgroup/hdf-maker-experimental
+  license: GPL3
+  license_family: GPL
+  summary: Raw to hdf5 converter for PSI Eiger detector

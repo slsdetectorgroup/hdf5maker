@@ -68,7 +68,9 @@ if __name__ == "__main__":
     fname_out_data = [fname_out.parent/f'{fname_out.stem}_{i:06d}.h5' for i in range(num_data_files)]
     if args.sample:
         fname_out_data = fname_out_data[0:1]
-        frames_to_read = [(0,100)]
+        n_frames = (100, raw.total_frames)[raw.total_frames<100]
+        frames_to_read = [(0,n_frames)]
+        print(f'Option -s used, converting {frames_to_read}')
     
     # Run conversion in parallel
     conversion_args = [(fname_in, fname, start, stop) for (start, stop),fname in zip(frames_to_read, fname_out_data)]
