@@ -3,6 +3,8 @@ import hdf5plugin
 import h5py
 import numpy as np
 
+from .raw_file import parse_raw_fname
+
 def string_dt(s):
     tid = h5py.h5t.C_S1.copy()
     tid.set_size(len(s))
@@ -39,7 +41,6 @@ def write_data_file(
         # chunks = image.shape,
         **compression,
     )
-
     ds.attrs["image_nr_low"] = np.int32(image_nr_low)
     ds.attrs["image_nr_high"] = np.int32(image_nr_low + data.shape[0] - 1)
     f.close()
@@ -51,6 +52,7 @@ def write_master_file(
     pixel_mask=None,
     compression=hdf5plugin.Bitshuffle(nelems=0, lz4=True),
 ):
+    print(f"Writing: {fname}")
     f = h5py.File(fname, "w")
     nxentry, nxdata = create_entry_and_data(f)
 
@@ -64,3 +66,14 @@ def write_master_file(
         inst = nxentry.create_group("instrument/detector/detectorSpecific")
         inst.create_dataset("pixel_mask", data=pixel_mask.astype(np.uint8), **compression)
     f.close()
+
+
+def get_output_fname(fname_in, path_out, fname_out = None):
+    fname_in = Path(fname_in)
+    path_out = Path(path_out)
+    base, run_id = parse_raw_fname(fname_in)
+    if fname_out is None:
+        fname_out = base.name
+
+    return path_out/f'{fname_out}_{run_id:04d}.h5'
+    

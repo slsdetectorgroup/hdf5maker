@@ -1,6 +1,6 @@
 from pathlib import Path
+from hdf5maker.io import read_master_file, read_bad_pixels
 
-from hdf5maker.io import read_master_file, _guess_geometry
 
 def test_read_master_file():
     fpath = Path(__file__).parent / "data/sample_master_2.raw"
@@ -16,8 +16,11 @@ def test_read_master_file():
     assert master['Pixels'] == (512, 256)
 
 
-def test_guess_geometry():
-    assert _guess_geometry(2) == '500k'
-    assert _guess_geometry(4) == '1M'
+def test_read_bad_pixels():
+    fname = Path(__file__).parent / "data/bad_pixels.txt"
+    pixels = read_bad_pixels(fname)
+
+    assert pixels == [(597, 496), (300, 200)]
+
 
 

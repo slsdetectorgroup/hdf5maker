@@ -1,6 +1,7 @@
 from pathlib import Path
 import numpy as np
 
+
 def to_dtype(bits):
     if bits == 4:
         return np.uint8
@@ -58,7 +59,27 @@ def _parse_master_dict(master):
         master[field] = int(master[field])
 
     master['Rate Corrections'] = master['Rate Corrections'].strip('[]').split(',') 
-    
     master['Pixels'] = tuple(int(i) for i in master['Pixels'].strip('[]').split(','))
     master['nmod'] = len(master['Rate Corrections'])
     return master
+
+
+def read_bad_pixels(fname):
+    """
+    Read ascii file with bad pixels in row, col format
+    """
+
+    pixels = []
+    with open(fname, 'r') as f:
+        try:
+            for line in f:
+                if line[0] == '#':
+                    continue
+                row, col = line.split(',')
+                pixels.append((int(row), int(col)))
+        except:
+            raise ValueError(f"Could not parse bad pixels file: {fname}")
+
+    return pixels
+
+    

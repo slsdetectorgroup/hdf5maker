@@ -1,0 +1,35 @@
+{% set name = "hdf5maker" %}
+{% set version = "0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+  script: build.sh
+
+source:
+  path: ..
+
+
+# build:
+#   number: 0
+#   script: build.sh
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+    - numpy
+    - h5py
+    - hdf5plugin
+
+test:
+  imports:
+    - hdf5maker
+
+about:
+  home: https://palletsprojects.com/p/click/
+  license: BSD
+  license_family: BSD
+  summary: Composable command line interface toolkit

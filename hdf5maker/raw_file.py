@@ -151,12 +151,9 @@ class RawDataFile:
     def close(self):
         self._f.close()
 
-
     def seek(self, n_frames):
         #no need do check already done at top level? 
         frame_number = self.current_frame+n_frames
-        print(f'Looking for frame: {frame_number}')
-
         i = self._file_index_from_frame_number(frame_number)
         if i != self.file_index:
             self.open_file(self._file_name_from_index(i))
@@ -164,12 +161,9 @@ class RawDataFile:
                 self.current_frame = self._edge[i-1]
             else: 
                 self.current_frame = 0 #We opened the first file
-        print(f'Now at {self.current_frame}')
 
         frames_to_seek = frame_number - self.current_frame
         n_bytes = (frame_header_dt.itemsize+self.databytes)*frames_to_seek
-        
-        print(f'Moving forward: {frames_to_seek} frames')
         if n_bytes != 0:
             self._f.seek(n_bytes)
             self.current_frame += frames_to_seek

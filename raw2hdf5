@@ -1,4 +1,5 @@
 #!/usr/bin/env python 
+import os
 import numpy as np
 from pathlib import Path
 import hdf5maker as h5m
@@ -28,33 +29,48 @@ if __name__ == "__main__":
     #Parse input arguments
     parser = ArgumentParser()
     parser.add_argument("input", help="Master file of input data", type = Path)
-    parser.add_argument("output", help="Master file of output data", type = Path)
+    parser.add_argument("path_out", help="Output path for hdf5 files", type = Path)
     parser.add_argument("-j", "--num_threads", help="Number of threads used for processing", type = int, default=4)
-    parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
+    parser.add_argument("-n", "--custom_name", help="Custom name for the output file",  default=None)
     parser.add_argument("-s", "--sample", help="Only convert the first 100 frames", action="store_true")
     args = parser.parse_args()
 
     fname_in = args.input
-    fname_out = args.output
+    fname_out = h5m.get_output_fname(fname_in, args.path_out, args.custom_name)
 
     # Open the raw file to find out how much data we have
+    print(f'Reading: {fname_in}')
     raw = h5m.EigerRawFileReader(fname_in)
     num_data_files = len(raw.frames_per_file)
     start = np.zeros(num_data_files+1, dtype=np.int64)
     start[1:] = np.cumsum(raw.frames_per_file)
     frames_to_read = list(zip(start, start[1:]))
-    print(frames_to_read)
     raw.close()
+
+    print(f'Image size: {raw.image_size}')
+    print(f'Dynamic range: {raw.dr}')
+    print(f'Total frames: {raw.total_frames}')
 
     # Mask for defective pixels, as a default contains only module gaps
     pixel_mask = raw.module_gaps
 
+    #Look for additional pixels to mask 
+    try:
+        pixels = h5m.read_bad_pixels('bad_pixels.txt')
+        print(f'Loading pixels to mask from: {os.getcwd()}/bad_pixels.txt')
+        for p in pixels:
+            pixel_mask[p] = True
+    except:
+        print(f'No bad pixels file found')
+
+
     # Generate filenames for data out files
-    fname_out_data = [fname_out.parent/f'test_data_{i:06d}.h5' for i in range(num_data_files)]
+    fname_out_data = [fname_out.parent/f'{fname_out.stem}_{i:06d}.h5' for i in range(num_data_files)]
     if args.sample:
         fname_out_data = fname_out_data[0:1]
-        frames_to_read[0] = (0,100)
+        frames_to_read = [(0,100)]
     
+    # Run conversion in parallel
     conversion_args = [(fname_in, fname, start, stop) for (start, stop),fname in zip(frames_to_read, fname_out_data)]
     pool = mp.Pool(args.num_threads)
     result = pool.starmap(convert_data_file, conversion_args)
@@ -63,8 +79,4 @@ if __name__ == "__main__":
     h5m.write_master_file(fname_out, fname_out_data, pixel_mask=pixel_mask)
     t_stop = time.time()
 
-    print(f'Conversion took: {t_stop-t_start:.2f}s')
-
-    r = max(r['reading'] for r in result)
-    w = max(r['writing'] for r in result)
-    print(f'{r=}, {w=}, {r+w}')
+    print(f'Processing took: {t_stop-t_start:.2f}s for {frames_to_read[-1][1]} frames')
