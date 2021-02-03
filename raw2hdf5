@@ -32,6 +32,7 @@ if __name__ == "__main__":
     parser.add_argument("path_out", help="Output path for hdf5 files", type = Path)
     parser.add_argument("-j", "--num_threads", help="Number of threads used for processing", type = int, default=4)
     parser.add_argument("-n", "--custom_name", help="Custom name for the output file",  default=None)
+    parser.add_argument("-b", "--bad_pixels", help="List of bad pixels in row, col format",  default=None)
     parser.add_argument("-s", "--sample", help="Only convert the first 100 frames", action="store_true")
     args = parser.parse_args()
 
@@ -56,8 +57,12 @@ if __name__ == "__main__":
 
     #Look for additional pixels to mask 
     try:
-        pixels = h5m.read_bad_pixels('bad_pixels.txt')
-        print(f'Loading pixels to mask from: {os.getcwd()}/bad_pixels.txt')
+        if args.bad_pixels is None:
+            fname_bp = Path('bad_pixels.txt')
+        else: 
+            fname_bp = args.bad_pixels
+        pixels = h5m.read_bad_pixels(fname_bp)
+        print(f'Loading pixels to mask from: {fname_bp}')
         for p in pixels:
             pixel_mask[p] = True
     except:
