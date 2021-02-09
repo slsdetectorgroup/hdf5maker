@@ -1,12 +1,14 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <numpy/arrayobject.h>
 #include "eiger_defs.h"
 #include "raw_file.h"
+#include <Python.h>
+#include <numpy/arrayobject.h>
 
 #include <stdio.h>
 #include <unistd.h>
+
+#define VERBOSE
 
 /* Docstrings */
 static char module_docstring[] =
@@ -42,7 +44,7 @@ PyMODINIT_FUNC PyInit__hdf5maker(void) {
     import_array();
 
     PyArray_Descr *obj = get_frame_header_dt();
-    PyObject_SetAttrString(m, "frame_header_dt", (PyObject*)obj);
+    PyObject_SetAttrString(m, "frame_header_dt", (PyObject *)obj);
     Py_DECREF(obj);
     return m;
 }
@@ -65,24 +67,39 @@ static PyObject *read_raw(PyObject *self, PyObject *args) {
     PyObject *data = PyArray_SimpleNew(3, dims, dr_to_dtype(dr));
 
     const size_t bytes_to_copy = dr * PORT_NROWS * PORT_NCOLS / 8;
-    sls_detector_header* h_ptr = PyArray_BYTES((PyArrayObject*)header);
-    char *frame_ptr = PyArray_BYTES((PyArrayObject*)data);
-    PyArray_FILLWBYTE((PyArrayObject*)data, 0);
-    const int stride = PyArray_STRIDE((PyArrayObject*)data, 0);
-    char *buffer = malloc(bytes_to_copy+sizeof(sls_detector_header));
+    sls_detector_header *h_ptr = PyArray_BYTES((PyArrayObject *)header);
+    char *frame_ptr = PyArray_BYTES((PyArrayObject *)data);
+    PyArray_FILLWBYTE((PyArrayObject *)data, 0);
+    const int stride = PyArray_STRIDE((PyArrayObject *)data, 0);
+    char *buffer = malloc(bytes_to_copy + sizeof(sls_detector_header));
 
-    char * expanded_buffer = NULL;
-    if (dr == 4){
+    char *expanded_buffer = NULL;
+    if (dr == 4) {
         expanded_buffer = malloc(bytes_to_copy * 2);
     }
 
+    #ifdef VERBOSE
+    printf("dr: %ld\n", dr);
+    printf("bytes_to_copy: %ld\n", bytes_to_copy);
+    printf("stride: %ld\n", stride);
+    #endif
+
     for (int i = 0; i < n_frames; ++i) {
-        size_t sz = read(fd, buffer, bytes_to_copy+sizeof(sls_detector_header));
+        size_t sz =
+            read(fd, buffer, bytes_to_copy + sizeof(sls_detector_header));
         memcpy(h_ptr, buffer, sizeof(sls_detector_header));
-        if(dr == 4){
-            //expand 4->8 bits
-        }else{
-            copy_to_place(frame_ptr, buffer+sizeof(sls_detector_header), dr, h_ptr->row, h_ptr->column);
+        if (dr == 4) {
+            uint8_t *dst = expanded_buffer;
+            uint8_t *src = buffer + sizeof(sls_detector_header);
+            for (int j = 0; j < bytes_to_copy; ++j) {
+                *dst++ = *src & 0xfu;
+                *dst++ = *src++ >> 4u;
+            }
+            copy_to_place(frame_ptr, expanded_buffer, 8, h_ptr->row,
+                          h_ptr->column);
+        } else {
+            copy_to_place(frame_ptr, buffer + sizeof(sls_detector_header), dr,
+                          h_ptr->row, h_ptr->column);
         }
         frame_ptr += stride;
         h_ptr++;

@@ -16,7 +16,7 @@ def convert_data_file(fname_in, fname_out, start, stop):
     t0 = time.time()
     raw = h5m.EigerRawFileReader(fname_in)
     raw.seek(start)
-    data = raw.read(stop-start)
+    data = raw.c_read(stop-start)
     t1 = time.time()
     h5m.write_data_file(fname_out, data, image_nr_low=start+1)
     t2 = time.time()

@@ -254,7 +254,6 @@ class RawDataFile:
             data = np.zeros( tmp.size * 2, dtype = tmp.dtype )
             data[0::2] = np.bitwise_and(tmp, 0x0f)
             data[1::2] = np.bitwise_and(tmp >> 4, 0x0f)
-            # print('shape', data.shape)
             data = data.reshape((self.rows,self.cols))
         else:
             raise ValueError(f"Unknown dynamic range: {dr}")
