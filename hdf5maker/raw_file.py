@@ -110,7 +110,7 @@ def calculate_size_and_slices(geo):
                 rs = (y-257, y, 1)
                 cs = (x,x+515,1)
                 x += 515
-                port_wgap.append((slice(*rs), slice(*cs)))
+                port_wgap.append((slice(None, None, None), slice(*rs), slice(*cs)))
             y-=257
             row_counter += 1
             if row_counter == 2:
@@ -233,10 +233,6 @@ class RawDataFile:
         # return header, data
          
         header, data = _h5m.read_frame(self._f, self.dr, n_frames)
-
-        if self.flip_rows:
-            data = data[:, ::-1,:]
-
         return header, data
 
         
@@ -363,17 +359,13 @@ class EigerRawFileReader:
             n_frames = self.total_frames
         print(f"Reading: {n_frames} frames")
         image = np.zeros((n_frames, *self.image_size), dtype = self.dt)
-        # raw_image = np.zeros(self._raw_pixels, dtype = self.dt)
-        for i in range(n_frames):
-            for f,s in list(zip(self.files, self._pwg)):
-                print(s)
-                h, image[i][s] = f.c_read(1)
-
-            # image[i][self.mask] = raw_image.flat
-            # if self.redistribute:
-            #     image[i] = split_counts(image[i])
-            image[i][self.module_gaps] = self.default_value
+        for f,s in list(zip(self.files, self._pwg)):
+            h, image[s] = f.c_read(n_frames)
         self.current_frame += n_frames
+
+        if self.redistribute:
+            for frame in image:
+                split_counts(frame)
         return image
 
 
