@@ -4,6 +4,8 @@ import numpy as np
 from pathlib import Path
 import os
 
+import _hdf5maker as _h5m
+
 
 frame_header_dt = np.dtype([('Frame Number', 'u8'), 
                    ('SubFrame Number/ExpLength', 'u4'), 
@@ -98,6 +100,23 @@ def calculate_size_and_slices(geo):
                 ports.append((slice(*rs), slice(*cs)))
             y-=256
 
+    port_wgap = []
+    row_counter = 0
+    for col in range(0,nunit[1],2):
+        y = image_size[0]
+        for r in range(nunit[0]):
+            x = 515*col
+            for c in range(col, col+2, 1):
+                rs = (y-257, y, 1)
+                cs = (x,x+515,1)
+                x += 515
+                port_wgap.append((slice(*rs), slice(*cs)))
+            y-=257
+            row_counter += 1
+            if row_counter == 2:
+                y -= 36
+                row_counter = 0
+
     modules = []
     for col in range(nmod[1]):
         y = image_size[0]
@@ -107,7 +126,7 @@ def calculate_size_and_slices(geo):
             modules.append((slice(*rs), slice(*cs)))
             y-=514+36
 
-    return image_size, ports, modules
+    return image_size, ports, port_wgap, modules
 
 class RawDataFile:
     def __init__(self, fname, frame_size, dr, frames_per_file):
@@ -191,6 +210,35 @@ class RawDataFile:
 
         return header, data
 
+    def c_read(self, n_frames = -1):
+        #check if we can read 
+        if n_frames == -1:
+            n_frames = self.total_frames
+
+        if n_frames > self.total_frames - self.current_frame:
+            raise ValueError("Not enough frames left to read")
+
+        # header = np.zeros(n_frames, dtype = frame_header_dt)
+        # data = np.zeros((n_frames, self.rows, self.cols))
+
+        # for i in range(n_frames):
+        #     #open next file only if a read is going to happen
+        #     if self.current_frame == self._edge[self.file_index]:
+        #         self.open_next_file()
+
+        #     header[i] = self.read_frame_header()
+        #     data[i] = self.read_frame()
+        #     self.current_frame += 1
+
+        # return header, data
+         
+        header, data = _h5m.read_frame(self._f, self.dr, n_frames)
+
+        if self.flip_rows:
+            data = data[:, ::-1,:]
+
+        return header, data
+
         
 
     def read_frame_header(self):
@@ -247,7 +295,7 @@ class EigerRawFileReader:
         self.files = [RawDataFile(f, self.file_geometry, self.dr, self.frames_per_file) for f in self._raw_file_names]
         self.find_geometry()
 
-        self.image_size, self._ports, self._modules = calculate_size_and_slices(self._raw_pixels)
+        self.image_size, self._ports, self._pwg, self._modules = calculate_size_and_slices(self._raw_pixels)
         
         self.mask = np.zeros(self.image_size, dtype=np.bool_)
         for mod in self._modules:
@@ -306,6 +354,24 @@ class EigerRawFileReader:
             image[i][self.mask] = raw_image.flat
             if self.redistribute:
                 image[i] = split_counts(image[i])
+            image[i][self.module_gaps] = self.default_value
+        self.current_frame += n_frames
+        return image
+
+    def c_read(self, n_frames = -1):
+        if n_frames == -1:
+            n_frames = self.total_frames
+        print(f"Reading: {n_frames} frames")
+        image = np.zeros((n_frames, *self.image_size), dtype = self.dt)
+        # raw_image = np.zeros(self._raw_pixels, dtype = self.dt)
+        for i in range(n_frames):
+            for f,s in list(zip(self.files, self._pwg)):
+                print(s)
+                h, image[i][s] = f.c_read(1)
+
+            # image[i][self.mask] = raw_image.flat
+            # if self.redistribute:
+            #     image[i] = split_counts(image[i])
             image[i][self.module_gaps] = self.default_value
         self.current_frame += n_frames
         return image
