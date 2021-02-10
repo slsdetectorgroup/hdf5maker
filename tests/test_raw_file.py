@@ -48,3 +48,23 @@ def test_get_frames_to_read():
     reader.file_index = 1
     assert reader.get_frames_to_read(1) == [1]
 
+
+def test_get_next_file_name():
+    reader = RawDataFile('dummy_d0_f0_0.raw', (256,512), 16, [], lazy = True)
+    assert reader._next_file_name() == Path('dummy_d0_f1_0.raw')
+    assert reader.file_index == 1
+    assert reader._next_file_name() == Path('dummy_d0_f2_0.raw')
+    assert reader.file_index == 2
+    assert reader._next_file_name() == Path('dummy_d0_f3_0.raw')
+    assert reader.file_index == 3
+    assert reader._next_file_name() == Path('dummy_d0_f4_0.raw')
+    assert reader.file_index == 4
+
+
+def test_file_index_from_frame_number():
+    reader = RawDataFile('dummy_d0_f0_0.raw', (256,512), 16, [5000,5000,5000,5000], lazy = True)
+    assert reader._file_index_from_frame_number(0) == 0
+    assert reader._file_index_from_frame_number(100) == 0
+    assert reader._file_index_from_frame_number(4999) == 0
+    assert reader._file_index_from_frame_number(5000) == 1
+    assert reader._file_index_from_frame_number(16000) == 3
