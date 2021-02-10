@@ -162,6 +162,7 @@ class RawDataFile:
         frame_number = self.current_frame+n_frames
         i = self._file_index_from_frame_number(frame_number)
         if i != self.file_index:
+            self.file_index = i
             self.open_file(self._file_name_from_index(i))
             if i>0:
                 self.current_frame = self._edge[i-1]

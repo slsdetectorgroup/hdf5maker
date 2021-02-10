@@ -69,17 +69,10 @@ static PyObject *read_raw(PyObject *self, PyObject *args) {
     PyArray_FILLWBYTE((PyArrayObject *)data, 0);
     const int stride = PyArray_STRIDE((PyArrayObject *)data, 0);
     uint8_t *buffer = malloc(bytes_to_copy + sizeof(sls_detector_header));
-
     uint8_t *expanded_buffer = NULL;
     if (dr == 4) {
         expanded_buffer = malloc(bytes_to_copy * 2);
     }
-
-#ifdef VERBOSE
-    printf("dr: %ld\n", dr);
-    printf("bytes_to_copy: %ld\n", bytes_to_copy);
-    printf("stride: %ld\n", stride);
-#endif
 
     for (int i = 0; i < n_frames; ++i) {
         read(fd, buffer, bytes_to_copy + sizeof(sls_detector_header));
@@ -100,7 +93,6 @@ static PyObject *read_raw(PyObject *self, PyObject *args) {
         frame_ptr += stride;
         h_ptr++;
     }
-
     free(buffer);
     free(expanded_buffer);
 

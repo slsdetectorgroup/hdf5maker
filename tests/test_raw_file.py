@@ -43,3 +43,8 @@ def test_get_frames_to_read():
     assert reader.get_frames_to_read(900) == [900]
     assert reader.get_frames_to_read(8000) == [2000, 6000]
 
+    reader.frames_per_file = [5000, 5000, 5000, 5000]
+    reader.current_frame = 9000
+    reader.file_index = 1
+    assert reader.get_frames_to_read(1) == [1]
+
