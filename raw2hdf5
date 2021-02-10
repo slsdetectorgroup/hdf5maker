@@ -37,6 +37,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     fname_in = args.input
+    args.path_out.mkdir(exist_ok = True)
     fname_out = h5m.get_output_fname(fname_in, args.path_out, args.custom_name)
 
     # Open the raw file to find out how much data we have

@@ -4,22 +4,9 @@ import numpy as np
 from pathlib import Path
 import os
 
+import _hdf5maker as _h5m
 
-frame_header_dt = np.dtype([('Frame Number', 'u8'), 
-                   ('SubFrame Number/ExpLength', 'u4'), 
-                   ('Packet Number', 'u4'), 
-                   ('Bunch ID', 'u8'),
-                   ('Timestamp', 'u8'),
-                   ('Module Id', 'u2'),
-                   ('Row', 'u2'),
-                   ('Column', 'u2'),
-                   ('Reserved', 'u2'),
-                   ('Debug', 'u4'),
-                   ('Round Robin Number', 'u2'),
-                   ('Detector Type', 'u1'),
-                   ('Header Version', 'u1'),
-                   ('Packets Caught Mask', 'V64'),
-                   ])
+frame_header_dt = _h5m.frame_header_dt
 
 def get_module_mask():
     """
@@ -98,6 +85,23 @@ def calculate_size_and_slices(geo):
                 ports.append((slice(*rs), slice(*cs)))
             y-=256
 
+    port_wgap = []
+    row_counter = 0
+    for col in range(0,nunit[1],2):
+        y = image_size[0]
+        for r in range(nunit[0]):
+            x = 515*col
+            for c in range(col, col+2, 1):
+                rs = (y-257, y, 1)
+                cs = (x,x+515,1)
+                x += 515
+                port_wgap.append((slice(None, None, None), slice(*rs), slice(*cs)))
+            y-=257
+            row_counter += 1
+            if row_counter == 2:
+                y -= 36
+                row_counter = 0
+
     modules = []
     for col in range(nmod[1]):
         y = image_size[0]
@@ -107,17 +111,19 @@ def calculate_size_and_slices(geo):
             modules.append((slice(*rs), slice(*cs)))
             y-=514+36
 
-    return image_size, ports, modules
+    return image_size, ports, port_wgap, modules
 
 class RawDataFile:
-    def __init__(self, fname, frame_size, dr, frames_per_file):
+    def __init__(self, fname, frame_size, dr, frames_per_file, lazy = False):
         self.dr = dr
         self.file_index = 0
         self.fname = Path(fname)
         self.base, _, self.end = self.fname.name.rsplit('_', 2)
-        self._f = open(fname, 'rb')
-        self.h0 = self.read_frame_header()
-        self._f.seek(0, os.SEEK_SET)
+        if not lazy:
+            self._f = open(fname, 'rb')
+            self.h0 = self.read_frame_header()
+            self._f.seek(0, os.SEEK_SET)
+            self.flip_rows = self.h0['Row'] % 2 == 1
         self.rows, self.cols = frame_size
         self.n_elements = self.rows*self.cols
         self.databytes = self.n_elements * self.dr // 8
@@ -125,7 +131,7 @@ class RawDataFile:
         self.frames_per_file = np.array(frames_per_file)
         self._edge = np.cumsum(self.frames_per_file)
         self.current_frame = 0
-        self.flip_rows = self.h0['Row'] % 2 == 1
+        
 
     def _next_file_name(self):
         self.file_index += 1
@@ -169,7 +175,7 @@ class RawDataFile:
             self.current_frame += frames_to_seek
     
 
-    def read(self, n_frames = -1):
+    def _python_read(self, n_frames = -1):
         #check if we can read 
         if n_frames == -1:
             n_frames = self.total_frames
@@ -191,6 +197,43 @@ class RawDataFile:
 
         return header, data
 
+    def read(self, n_frames = None, header = False):
+        if n_frames is None:
+            n_frames = self.total_frames
+
+        data = []
+        for i,n in enumerate(self.get_frames_to_read(n_frames)):
+            if i!=0:
+                self.open_next_file()
+            data.append(_h5m.read_frame(self._f, self.dr, n))
+
+        self.current_frame += n_frames
+        images = np.vstack(tuple(d[1] for d in data))    
+        if header: 
+            h = np.vstack(tuple(d[0] for d in data))   
+            return h, images 
+        else:
+            return images
+        
+    def get_frames_to_read(self, n_frames):
+        """
+        Return a list of the number of frames to read per file
+        """
+        left_in_file = sum(self.frames_per_file[0:self.file_index+1])-self.current_frame
+        frames_to_read = [(left_in_file, n_frames)[n_frames<= left_in_file]]
+        frames_left_to_read = n_frames-sum(frames_to_read)
+        if not frames_left_to_read:
+            return frames_to_read
+
+        for n in self.frames_per_file[self.file_index+1:]:
+            if n > frames_left_to_read:
+                frames_to_read.append(frames_left_to_read)
+                break
+            else:
+                frames_to_read.append(n)
+                frames_left_to_read -= n
+
+        return frames_to_read
         
 
     def read_frame_header(self):
@@ -210,7 +253,6 @@ class RawDataFile:
             data = np.zeros( tmp.size * 2, dtype = tmp.dtype )
             data[0::2] = np.bitwise_and(tmp, 0x0f)
             data[1::2] = np.bitwise_and(tmp >> 4, 0x0f)
-            # print('shape', data.shape)
             data = data.reshape((self.rows,self.cols))
         else:
             raise ValueError(f"Unknown dynamic range: {dr}")
@@ -223,39 +265,38 @@ class RawDataFile:
 class EigerRawFileReader:
     module_mask = get_module_mask()
 
-    def __init__(self, fname,  redistribute = True):
+    def __init__(self, fname,  redistribute = True, lazy = False):
         fname = Path(fname)
         self.fname = fname
         self.redistribute = redistribute
-        self.master = read_master_file(self.fname)
         self.base, self.run_id = parse_raw_fname(self.fname)
         self.default_value = 0 #used for module gaps
-        
-        
-        self.dt = to_dtype(self.master['Dynamic Range'])
-        self.dr = self.master['Dynamic Range']
-        self.total_frames = self.master['Total Frames']
         self.current_frame = 0
-        self.max_frames_per_file = self.master['Max Frames Per File']
-        self.file_geometry = self.master['Pixels'][::-1]
-        # self.n_files = -(-self.total_frames // self.max_frames_per_file) #-(-a // b)
-        self.frames_per_file = get_frames_per_file(self.total_frames, self.max_frames_per_file)
-        self._fid = 0
-        
-        #open the first files
-        self._raw_file_names = [f'{self.base}_d{i}_f{self._fid}_{self.run_id}.raw' for i in range(self.master['nmod']*2)]
-        self.files = [RawDataFile(f, self.file_geometry, self.dr, self.frames_per_file) for f in self._raw_file_names]
-        self.find_geometry()
 
-        self.image_size, self._ports, self._modules = calculate_size_and_slices(self._raw_pixels)
+        if not lazy:
+            self.master = read_master_file(self.fname)
+            self.dt = to_dtype(self.master['Dynamic Range'])
+            self.dr = self.master['Dynamic Range']
+            self.total_frames = self.master['Total Frames']
+            self.max_frames_per_file = self.master['Max Frames Per File']
+            self.file_geometry = self.master['Pixels'][::-1]
+            self.frames_per_file = get_frames_per_file(self.total_frames, self.max_frames_per_file)
+            self._fid = 0
         
-        self.mask = np.zeros(self.image_size, dtype=np.bool_)
-        for mod in self._modules:
-            self.mask[mod] = self.module_mask
+            #open the first files
+            self._raw_file_names = [f'{self.base}_d{i}_f{self._fid}_{self.run_id}.raw' for i in range(self.master['nmod']*2)]
+            self.files = [RawDataFile(f, self.file_geometry, self.dr, self.frames_per_file) for f in self._raw_file_names]
+            self.find_geometry()
 
-        self.module_gaps = np.ones(self.image_size, dtype=np.bool_)
-        for mod in self._modules:
-            self.module_gaps[mod] = False
+            self.image_size, self._ports, self._pwg, self._modules = calculate_size_and_slices(self._raw_pixels)
+        
+            self.mask = np.zeros(self.image_size, dtype=np.bool_)
+            for mod in self._modules:
+                self.mask[mod] = self.module_mask
+
+            self.module_gaps = np.ones(self.image_size, dtype=np.bool_)
+            for mod in self._modules:
+                self.module_gaps[mod] = False
 
     def seek(self, n_frames):
         frames_left = self.total_frames-self.current_frame
@@ -292,7 +333,7 @@ class EigerRawFileReader:
         self._raw_pixels = np.array((max(row)+1, max(col)+1)) * self.master['Pixels'][::-1]
         return self._raw_pixels
 
-    def read(self, n_frames = -1):
+    def _python_read(self, n_frames = -1):
         if n_frames == -1:
             n_frames = self.total_frames
         print(f"Reading: {n_frames} frames")
@@ -300,7 +341,7 @@ class EigerRawFileReader:
         raw_image = np.zeros(self._raw_pixels, dtype = self.dt)
         for i in range(n_frames):
             for f,s in list(zip(self.files, self._ports)):
-                h, raw_image[s] = f.read(1)
+                h, raw_image[s] = f._python_read(1)
 
         
             image[i][self.mask] = raw_image.flat
@@ -310,6 +351,20 @@ class EigerRawFileReader:
         self.current_frame += n_frames
         return image
 
+    def read(self, n_frames = None):
+        if n_frames is None:
+            n_frames = self.total_frames
+        print(f"Reading: {n_frames} frames")
+        image = np.zeros((n_frames, *self.image_size), dtype = self.dt)
+        for f,s in list(zip(self.files, self._pwg)):
+            image[s] = f.read(n_frames)
+        self.current_frame += n_frames
+
+        if self.redistribute:
+            for frame in image:
+                split_counts(frame)
+        return image
+    
 
 def parse_raw_fname(fname):
     try:
@@ -327,3 +382,5 @@ def get_frames_per_file(total_frames, frames_per_file):
     if total_frames % frames_per_file:
         frames.append(total_frames-frames_per_file*len(frames))
     return frames
+
+
