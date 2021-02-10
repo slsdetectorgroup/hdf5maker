@@ -8,12 +8,17 @@ source:
   path: ..
 
 requirements:
+  build:
+    - numpy >=1.7
+
   host:
     - pip
     - python
+    - numpy >=1.7
+
   run:
     - python
-    - numpy
+    - numpy >=1.7
     - h5py
     - hdf5plugin
 
@@ -22,7 +27,7 @@ test:
     - hdf5maker
 
 about:
-  home: https://github.com/slsdetectorgroup/hdf-maker-experimental
+  home: https://github.com/slsdetectorgroup/hdf5maker
   license: GPL3
   license_family: GPL
   summary: Raw to hdf5 converter for PSI Eiger detector

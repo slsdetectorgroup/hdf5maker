@@ -3,6 +3,7 @@ from os.path import dirname, isdir, join
 import os
 import re
 import subprocess
+import numpy.distutils.misc_util as du
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -53,7 +54,12 @@ def get_version():
 
     return version
 
-
+c_ext = setuptools.Extension("_hdf5maker",
+                  sources = ["src/raw_file.c", "src/hdf5maker.c"],
+                  libraries = ['c',],
+                  include_dirs=du.get_numpy_include_dirs(),
+                  extra_compile_args = [],
+                  )
 
 setuptools.setup(
     name="hdf5maker",
@@ -70,5 +76,6 @@ setuptools.setup(
         "License :: OSI Approved :: GPL License",
         "Operating System :: OS Independent",
     ],
+    ext_modules=[c_ext],
     python_requires='>=3.6',
 )

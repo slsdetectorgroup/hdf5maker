@@ -39,6 +39,8 @@ def read_master_file(fname):
         frame_header[field.strip()] = value.strip(" \n")
 
     master["Frame Header"] = frame_header
+    if master["Version"] != "6.2":
+        raise ValueError("This converter only supports raw files of v6.2")
     return _parse_master_dict(master)
 
 
