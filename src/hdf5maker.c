@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define VERBOSE
+// #define VERBOSE
 
 /* Docstrings */
 static char module_docstring[] =
@@ -24,10 +24,6 @@ static PyArray_Descr *get_frame_header_dt();
 /* Module specification */
 static PyMethodDef module_methods[] = {
     {"read_frame", (PyCFunction)read_raw, METH_VARARGS, "hej"},
-    // {"find_trimbits", find_trimbits, METH_VARARGS, find_trimbits_doc},
-    // {"vrf_fit", vrf_fit, METH_VARARGS, find_trimbits_doc},
-    // {"hist", hist, METH_VARARGS, find_trimbits_doc},
-    // {"gaus_float", gaus_float, METH_VARARGS, find_trimbits_doc},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef hdf5maker_def = {
@@ -67,31 +63,31 @@ static PyObject *read_raw(PyObject *self, PyObject *args) {
     PyObject *data = PyArray_SimpleNew(3, dims, dr_to_dtype(dr));
 
     const size_t bytes_to_copy = dr * PORT_NROWS * PORT_NCOLS / 8;
-    sls_detector_header *h_ptr = PyArray_BYTES((PyArrayObject *)header);
-    char *frame_ptr = PyArray_BYTES((PyArrayObject *)data);
+    sls_detector_header *h_ptr =
+        (sls_detector_header *)PyArray_BYTES((PyArrayObject *)header);
+    uint8_t *frame_ptr = (uint8_t *)PyArray_BYTES((PyArrayObject *)data);
     PyArray_FILLWBYTE((PyArrayObject *)data, 0);
     const int stride = PyArray_STRIDE((PyArrayObject *)data, 0);
-    char *buffer = malloc(bytes_to_copy + sizeof(sls_detector_header));
+    uint8_t *buffer = malloc(bytes_to_copy + sizeof(sls_detector_header));
 
-    char *expanded_buffer = NULL;
+    uint8_t *expanded_buffer = NULL;
     if (dr == 4) {
         expanded_buffer = malloc(bytes_to_copy * 2);
     }
 
-    #ifdef VERBOSE
+#ifdef VERBOSE
     printf("dr: %ld\n", dr);
     printf("bytes_to_copy: %ld\n", bytes_to_copy);
     printf("stride: %ld\n", stride);
-    #endif
+#endif
 
     for (int i = 0; i < n_frames; ++i) {
-        size_t sz =
-            read(fd, buffer, bytes_to_copy + sizeof(sls_detector_header));
+        read(fd, buffer, bytes_to_copy + sizeof(sls_detector_header));
         memcpy(h_ptr, buffer, sizeof(sls_detector_header));
         if (dr == 4) {
             uint8_t *dst = expanded_buffer;
             uint8_t *src = buffer + sizeof(sls_detector_header);
-            for (int j = 0; j < bytes_to_copy; ++j) {
+            for (size_t j = 0; j < bytes_to_copy; ++j) {
                 *dst++ = *src & 0xfu;
                 *dst++ = *src++ >> 4u;
             }

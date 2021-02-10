@@ -18,7 +18,7 @@ int dr_to_dtype(int dr) {
     }
 }
 
-void copy_to_place(char *dst, char *src, int dr, int row, int col){
+void copy_to_place(uint8_t *dst, uint8_t *src, int dr, int row, int col){
     const size_t bytes_per_pixel = dr/8;
     const size_t bytes_per_row = PORT_NCOLS_WGAP * bytes_per_pixel;
     const size_t src_bytes_per_row = PORT_NCOLS * bytes_per_pixel;

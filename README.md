@@ -22,6 +22,10 @@ raw2hdf5 -h #show usage
 ## Data processing
 
 
+## Limitations 
+
+The software assumes that files are written with padding in the receiver such that each frame is header+data and no size variation due to packet loss. 
+
 ### Image size
 
 The tool reads raw files from disk and uses row, col information in the frame header in combination with the master fileto figure out the image size.  
