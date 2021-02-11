@@ -1,13 +1,7 @@
 
 
-from hdf5maker.raw_file import *
+from hdf5maker.raw_file_reader import *
 from pathlib import Path
-
-
-def test_parse_raw_fname_with_path():
-    base, run_id = parse_raw_fname('/path/to/some_file_master_32.raw')
-    assert run_id == 32
-    assert base == Path('/path/to/some_file')
 
 
 def test_frames_per_file():

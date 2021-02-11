@@ -1,5 +1,5 @@
 from pathlib import Path
-from hdf5maker.io import read_master_file, read_bad_pixels
+from hdf5maker.io import read_bad_pixels
 
 
 def test_read_bad_pixels():
