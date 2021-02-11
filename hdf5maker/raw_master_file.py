@@ -1,7 +1,9 @@
 from pathlib import Path
+import re
+
 
 class RawMasterFile:
-    def __init__(self, fname, lazy = False):
+    def __init__(self, fname, lazy=False):
         self.dict = {}
         self.fname = Path(fname)
         if not lazy:
@@ -25,9 +27,9 @@ class RawMasterFile:
 
     @property
     def data_file_names(self):
-        if self.dict['Detector Type'] == 'Eiger':
-            return [self.data_fname(i) for i in range(self.dict['nmod']*2)] 
-        return [self.data_fname(i) for i in range(self.dict['nmod'])]
+        if self.dict["Detector Type"] == "Eiger":
+            return [self.data_fname(i) for i in range(self.dict["nmod"] * 2)]
+        return [self.data_fname(i) for i in range(self.dict["nmod"])]
 
     def _find_number_of_modules(self):
         i = 0
@@ -35,7 +37,7 @@ class RawMasterFile:
             i += 1
         if self.dict["Detector Type"] == "Eiger":
             assert i % 2 == 0
-            self.dict["nmod"] = i//2
+            self.dict["nmod"] = i // 2
 
     def _read(self):
         """
@@ -87,9 +89,25 @@ class RawMasterFile:
         for field in int_fields.intersection(self.dict.keys()):
             self.dict[field] = int(self.dict[field])
 
-        self.dict["Pixels"] = tuple(int(i) for i in self.dict["Pixels"].strip("[]").split(","))
+        self.dict["Pixels"] = tuple(
+            int(i) for i in self.dict["Pixels"].strip("[]").split(",")
+        )
         if "Rate Corrections" in self.dict:
-            self.dict["Rate Corrections"] = self.dict["Rate Corrections"].strip("[]").split(",")
+            self.dict["Rate Corrections"] = (
+                self.dict["Rate Corrections"].strip("[]").split(",")
+            )
             n = len(self.dict["Rate Corrections"])
-            assert self.dict["nmod"] == n, f'nmod from Rate Corrections {n} differs from nmod {self.dict["nmod"]}'
+            assert (
+                self.dict["nmod"] == n
+            ), f'nmod from Rate Corrections {n} differs from nmod {self.dict["nmod"]}'
 
+    @staticmethod
+    def to_nanoseconds(t):
+        nanoseconds = {"s": 1000 * 1000 * 1000, "ms": 1000 * 1000, "us": 1000, "ns": 1}
+        try:
+            value = re.match(r"(\d+(?:\.\d+)?)", t).group()
+            unit = t[len(value) :]
+            value = int(float(value) * nanoseconds[unit])
+        except:
+            raise ValueError(f"Could not convert: {t} to nanoseconds")
+        return value

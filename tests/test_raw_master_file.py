@@ -53,3 +53,10 @@ def test_eiger_master_file_data_file_names():
     assert m.data_file_names[1] == fpath.parent/'sample_d1_f0_2.raw'
     assert m.data_file_names[2] == fpath.parent/'sample_d2_f0_2.raw'
     assert m.data_file_names[3] == fpath.parent/'sample_d3_f0_2.raw'
+
+
+def test_parse_exptime():
+    assert RawMasterFile.to_nanoseconds('10s') == int(10e9)
+    assert RawMasterFile.to_nanoseconds('10ns') == 10
+    assert RawMasterFile.to_nanoseconds('3ms') == 3*1000*1000
+    assert RawMasterFile.to_nanoseconds('2.62144ms') == 2.62144*1000*1000
