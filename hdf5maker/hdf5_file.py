@@ -3,7 +3,7 @@ import hdf5plugin
 import h5py
 import numpy as np
 
-from .raw_file import parse_raw_fname
+from .raw_master_file import RawMasterFile
 
 def string_dt(s):
     tid = h5py.h5t.C_S1.copy()
@@ -71,9 +71,10 @@ def write_master_file(
 def get_output_fname(fname_in, path_out, fname_out = None):
     fname_in = Path(fname_in)
     path_out = Path(path_out)
-    base, run_id = parse_raw_fname(fname_in)
+    m = RawMasterFile(fname_in, lazy=True)
+    m._parse_fname()
     if fname_out is None:
-        fname_out = base.name
+        fname_out = m.base.name
 
-    return path_out/f'{fname_out}_{run_id:04d}.h5'
+    return path_out/f'{fname_out}_{m.run_id:04d}.h5'
     

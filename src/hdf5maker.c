@@ -18,12 +18,14 @@ static char module_docstring[] =
 
 /* Available functions */
 static PyObject *read_raw(PyObject *self, PyObject *args);
+static PyObject *mt_read(PyObject *self, PyObject *args);
 
 static PyArray_Descr *get_frame_header_dt();
 
 /* Module specification */
 static PyMethodDef module_methods[] = {
     {"read_frame", (PyCFunction)read_raw, METH_VARARGS, "hej"},
+    {"mt_read", (PyCFunction)mt_read, METH_VARARGS, "hej"},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef hdf5maker_def = {
@@ -43,6 +45,10 @@ PyMODINIT_FUNC PyInit__hdf5maker(void) {
     PyObject_SetAttrString(m, "frame_header_dt", (PyObject *)obj);
     Py_DECREF(obj);
     return m;
+}
+
+static PyObject *mt_read(PyObject *self, PyObject *args){
+    return NULL;
 }
 
 static PyObject *read_raw(PyObject *self, PyObject *args) {

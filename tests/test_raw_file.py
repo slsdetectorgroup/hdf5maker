@@ -3,11 +3,6 @@
 from hdf5maker.raw_file import *
 from pathlib import Path
 
-def test_parse_raw_fname():
-    base, run_id = parse_raw_fname('test_master_1.raw')
-    assert run_id == 1
-    assert base == Path('test')
-
 
 def test_parse_raw_fname_with_path():
     base, run_id = parse_raw_fname('/path/to/some_file_master_32.raw')
