@@ -5,24 +5,29 @@ import os
 import _hdf5maker as _h5m
 from _hdf5maker import frame_header_dt
 
+
 class RawDataFile:
-    def __init__(self, fname, frame_size, dr, frames_per_file, lazy = False):
+    def __init__(self, fname, frame_size, dr, frames_per_file, lazy = False, detector_type = 'Eiger'):
         self.dr = dr
         self.file_index = 0
         self.fname = Path(fname)
         self.base, _, self.end = self.fname.name.rsplit('_', 2)
-        if not lazy:
-            self._f = open(fname, 'rb')
-            self.h0 = self.read_frame_header()
-            self._f.seek(0, os.SEEK_SET)
-            self.flip_rows = self.h0['Row'] % 2 == 1
-        self.rows, self.cols = frame_size
-        self.n_elements = self.rows*self.cols
-        self.databytes = self.n_elements * self.dr // 8
+        self.databytes =  np.prod(frame_size )* self.dr // 8
         self.total_frames = sum(frames_per_file)
         self.frames_per_file = np.array(frames_per_file)
         self._edge = np.cumsum(self.frames_per_file)
         self.current_frame = 0
+        if not lazy:
+            self._f = open(self.fname, 'rb')
+            self.h0 = np.fromfile(self._f, count =1, dtype=frame_header_dt)[0]
+            self._f.seek(0, os.SEEK_SET)
+
+        if detector_type == 'Eiger':
+            self._rf = _h5m.read_frame
+        elif detector_type == 'Mythen3':
+            self._rf = _h5m.read_m3
+        else:
+            raise ValueError(f"Unsupported detector type: {detector_type}")
         
 
     def _next_file_name(self):
@@ -68,27 +73,7 @@ class RawDataFile:
             self.current_frame += frames_to_seek
     
 
-    def _python_read(self, n_frames = -1):
-        #check if we can read 
-        if n_frames == -1:
-            n_frames = self.total_frames
 
-        if n_frames > self.total_frames - self.current_frame:
-            raise ValueError("Not enough frames left to read")
-
-        header = np.zeros(n_frames, dtype = frame_header_dt)
-        data = np.zeros((n_frames, self.rows, self.cols))
-
-        for i in range(n_frames):
-            #open next file only if a read is going to happen
-            if self.current_frame == self._edge[self.file_index]:
-                self.open_next_file()
-
-            header[i] = self.read_frame_header()
-            data[i] = self.read_frame()
-            self.current_frame += 1
-
-        return header, data
 
     def read(self, n_frames = None, header = False):
         if n_frames is None:
@@ -98,7 +83,7 @@ class RawDataFile:
         for i,n in enumerate(self.get_frames_to_read(n_frames)):
             if i!=0:
                 self.open_next_file()
-            data.append(_h5m.read_frame(self._f, self.dr, n))
+            data.append(self._rf(self._f, self.dr, n))
 
         self.current_frame += n_frames
         images = np.vstack(tuple(d[1] for d in data))    
@@ -113,7 +98,7 @@ class RawDataFile:
         Return a list of the number of frames to read per file
         """
         left_in_file = sum(self.frames_per_file[0:self.file_index+1])-self.current_frame
-        frames_to_read = [(left_in_file, n_frames)[n_frames<= left_in_file]]
+        frames_to_read = [(left_in_file, n_frames)[bool(n_frames<= left_in_file)]] #silence pytest warning
         frames_left_to_read = n_frames-sum(frames_to_read)
         if not frames_left_to_read:
             return frames_to_read
@@ -127,29 +112,3 @@ class RawDataFile:
                 frames_left_to_read -= n
 
         return frames_to_read
-        
-
-    def read_frame_header(self):
-        return np.fromfile(self._f, count=1, dtype = frame_header_dt)[0]
-
-    def read_frame(self):
-        """
-        Read a single frame from an open file
-        """
-        #now we actually know the dr could optimize? 
-        if self.dr in [8,16,32]:
-            dt = np.dtype( 'uint{:d}'.format(self.dr) )
-            data =  np.fromfile(self._f, dtype = dt, count = self.n_elements).reshape((self.rows,self.cols))
-        elif self.dr == 4:
-            dt = np.dtype('uint8')
-            tmp = np.fromfile(self._f, dtype = dt, count = self.databytes) #Reading number of bytes
-            data = np.zeros( tmp.size * 2, dtype = tmp.dtype )
-            data[0::2] = np.bitwise_and(tmp, 0x0f)
-            data[1::2] = np.bitwise_and(tmp >> 4, 0x0f)
-            data = data.reshape((self.rows,self.cols))
-        else:
-            raise ValueError(f"Unknown dynamic range: {dr}")
-
-        if self.flip_rows:
-            data = data[::-1,:]
-        return data

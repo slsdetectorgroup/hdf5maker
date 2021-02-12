@@ -6,6 +6,7 @@
 #define PORT_NCOLS_WGAP 515
 #define NPIX_X_CHIP 256
 
+#define M3_CHANNELS 1280
 
 typedef struct {
     uint64_t frameNumber;

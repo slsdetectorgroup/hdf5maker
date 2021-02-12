@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-
+import numpy as np
 
 class RawMasterFile:
     def __init__(self, fname, lazy=False):
@@ -38,6 +38,8 @@ class RawMasterFile:
         if self.dict["Detector Type"] == "Eiger":
             assert i % 2 == 0
             self.dict["nmod"] = i // 2
+        else:
+            self.dict["nmod"] = i
 
     def _read(self):
         """
@@ -77,6 +79,7 @@ class RawMasterFile:
         int_fields = set(
             (
                 "Max Frames Per File",
+                "Image Size",
                 "Frame Padding",
                 "Total Frames",
                 "Dynamic Range",
@@ -87,11 +90,25 @@ class RawMasterFile:
         )
 
         for field in int_fields.intersection(self.dict.keys()):
-            self.dict[field] = int(self.dict[field])
+            self.dict[field] = int(self.dict[field].split()[0])
 
         self.dict["Pixels"] = tuple(
             int(i) for i in self.dict["Pixels"].strip("[]").split(",")
         )
+
+        if self.dict['Detector Type'] == 'Mythen3':
+            self.dict["Exptime1"] = self.to_nanoseconds(self.dict["Exptime1"])
+            self.dict["Exptime2"] = self.to_nanoseconds(self.dict["Exptime2"])
+            self.dict["Exptime3"] = self.to_nanoseconds(self.dict["Exptime3"])
+        else:
+            self.dict["Exptime"] = self.to_nanoseconds(self.dict["Exptime"])
+        
+        if self.dict['Detector Type'] == 'Eiger':
+            self.dict["SubExptime"] = self.to_nanoseconds(self.dict["SubExptime"])
+            self.dict["SubPeriod"] = self.to_nanoseconds(self.dict["SubPeriod"])
+
+        self.dict["Period"] = self.to_nanoseconds(self.dict["Period"])
+
         if "Rate Corrections" in self.dict:
             self.dict["Rate Corrections"] = (
                 self.dict["Rate Corrections"].strip("[]").split(",")
@@ -108,6 +125,7 @@ class RawMasterFile:
             value = re.match(r"(\d+(?:\.\d+)?)", t).group()
             unit = t[len(value) :]
             value = int(float(value) * nanoseconds[unit])
+            value = np.timedelta64(value, 'ns')
         except:
             raise ValueError(f"Could not convert: {t} to nanoseconds")
         return value

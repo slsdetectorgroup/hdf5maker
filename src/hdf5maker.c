@@ -19,6 +19,7 @@ static char module_docstring[] =
 /* Available functions */
 static PyObject *read_raw(PyObject *self, PyObject *args);
 static PyObject *mt_read(PyObject *self, PyObject *args);
+static PyObject *read_m3(PyObject *self, PyObject *args);
 
 static PyArray_Descr *get_frame_header_dt();
 
@@ -26,6 +27,7 @@ static PyArray_Descr *get_frame_header_dt();
 static PyMethodDef module_methods[] = {
     {"read_frame", (PyCFunction)read_raw, METH_VARARGS, "hej"},
     {"mt_read", (PyCFunction)mt_read, METH_VARARGS, "hej"},
+    {"read_m3", (PyCFunction)read_m3, METH_VARARGS, "hej"},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef hdf5maker_def = {
@@ -96,6 +98,51 @@ static PyObject *read_raw(PyObject *self, PyObject *args) {
             copy_to_place(frame_ptr, buffer + sizeof(sls_detector_header), dr,
                           h_ptr->row, h_ptr->column);
         }
+        frame_ptr += stride;
+        h_ptr++;
+    }
+    free(buffer);
+    free(expanded_buffer);
+
+    PyObject *ret = PyTuple_Pack(2, header, data);
+    Py_DECREF(header);
+    Py_DECREF(data);
+    return ret;
+}
+
+static PyObject *read_m3(PyObject *self, PyObject *args) {
+    PyObject *fobj;
+    int n_frames, dr;
+    if (!PyArg_ParseTuple(args, "OII", &fobj, &dr, &n_frames))
+        return NULL;
+
+    int fd = PyObject_AsFileDescriptor(fobj);
+    if (fd < 0)
+        return NULL;
+
+    // Allocate data for header and frames
+    PyArray_Descr *dtype = get_frame_header_dt();
+    const npy_intp header_dims[] = {n_frames};
+    PyObject *header = PyArray_SimpleNewFromDescr(1, header_dims, dtype);
+    npy_intp dims[] = {n_frames, M3_CHANNELS};
+    PyObject *data = PyArray_SimpleNew(2, dims, dr_to_dtype(dr));
+
+    const size_t bytes_to_copy = dr * M3_CHANNELS / 8;
+    sls_detector_header *h_ptr =
+        (sls_detector_header *)PyArray_BYTES((PyArrayObject *)header);
+    uint8_t *frame_ptr = (uint8_t *)PyArray_BYTES((PyArrayObject *)data);
+    PyArray_FILLWBYTE((PyArrayObject *)data, 0);
+    const int stride = PyArray_STRIDE((PyArrayObject *)data, 0);
+    uint8_t *buffer = malloc(bytes_to_copy + sizeof(sls_detector_header));
+    uint8_t *expanded_buffer = NULL;
+    if (dr == 4) {
+        expanded_buffer = malloc(bytes_to_copy * 2);
+    }
+
+    for (int i = 0; i < n_frames; ++i) {
+        read(fd, buffer, bytes_to_copy + sizeof(sls_detector_header));
+        memcpy(h_ptr, buffer, sizeof(sls_detector_header));
+        memcpy(frame_ptr, buffer + sizeof(sls_detector_header), bytes_to_copy);
         frame_ptr += stride;
         h_ptr++;
     }
