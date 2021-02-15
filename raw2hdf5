@@ -14,7 +14,7 @@ def convert_data_file(fname_in, fname_out, start, stop):
     Wrapper to read one data file and convert to hdf5
     """
     t0 = time.time()
-    raw = h5m.EigerRawFileReader(fname_in)
+    raw = h5m.RawFile(fname_in)
     raw.seek(start)
     data = raw.read(stop-start)
     t1 = time.time()
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     # Open the raw file to find out how much data we have
     print(f'Reading: {fname_in}')
-    raw = h5m.EigerRawFileReader(fname_in)
+    raw = h5m.RawFile(fname_in)
     num_data_files = len(raw.frames_per_file)
     start = np.zeros(num_data_files+1, dtype=np.int64)
     start[1:] = np.cumsum(raw.frames_per_file)
@@ -82,6 +82,7 @@ if __name__ == "__main__":
     conversion_args = [(fname_in, fname, start, stop) for (start, stop),fname in zip(frames_to_read, fname_out_data)]
     pool = mp.Pool(args.num_threads)
     result = pool.starmap(convert_data_file, conversion_args)
+    
 
     # Write hdf5 master file
     h5m.write_master_file(fname_out, fname_out_data, pixel_mask=pixel_mask)

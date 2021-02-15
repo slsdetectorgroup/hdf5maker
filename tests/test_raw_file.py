@@ -61,7 +61,7 @@ def test_file_index_from_frame_number():
 
 def test_read_one_eiger_frame():
     fpath = Path(__file__).parent / "data/sample_master_2.raw"
-    reader = EigerRawFileReader(fpath)
+    reader = RawFile(fpath)
     image = reader.read()
     assert image.shape == (1,1064, 1030)
     assert image.dtype == np.uint32
@@ -73,9 +73,16 @@ def test_read_one_eiger_frame():
     pm = np.broadcast_to(mask[np.newaxis,:,:], image.shape)
     assert np.all(image[pm] == gold_standard[pm])
 
-# def test_read_one_mythen3_file():
+def test_read_one_mythen3_file():
+    fpath = Path(__file__).parent / "data/TiScan_master_0.raw"
+    r = RawFile(fpath)
+    data = r.read()
+    assert data.shape == (701,2560)
+    assert data.dtype == np.uint32
 
-#     fpath = Path(__file__).parent / "data/TiScan_master_0.raw"
-
-#     r = RawFile(fpath)
-#     header, data = r.read()
+def test_read_directly_from_data_file():
+    fpath = Path(__file__).parent / "data/TiScan_master_0.raw"
+    r = RawFile(fpath)
+    header, data = r.files[0].read(header=True)
+    assert data.shape == (701,1280)
+    assert np.all(np.diff(header['Frame Number'])==1)

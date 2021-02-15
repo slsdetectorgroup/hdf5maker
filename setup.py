@@ -3,7 +3,7 @@ from os.path import dirname, isdir, join
 import os
 import re
 import subprocess
-import numpy.distutils.misc_util as du
+# import numpy as np
 
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -57,7 +57,7 @@ def get_version():
 c_ext = setuptools.Extension("_hdf5maker",
                   sources = ["src/raw_file.c", "src/hdf5maker.c"],
                   libraries = ['c',],
-                  include_dirs=du.get_numpy_include_dirs(),
+                #   include_dirs=[np.get_include(),],
                   extra_compile_args = [],
                   )
 
@@ -69,7 +69,7 @@ setuptools.setup(
     description="Eiger raw file to hdf5 converter",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/slsdetectorgroup/hdf-maker-experimental",
+    url="https://github.com/slsdetectorgroup/hdf5maker",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -77,5 +77,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     ext_modules=[c_ext],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

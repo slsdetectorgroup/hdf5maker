@@ -117,14 +117,11 @@ def calculate_size_and_slices(geo):
     return image_size, ports, port_wgap, modules
 
 
-def RawFile(fname):
-    return EigerRawFileReader(fname)
 
-
-class EigerRawFileReader:
+class RawFile:
     module_mask = get_module_mask()
 
-    def __init__(self, fname, redistribute=True, lazy=False):
+    def __init__(self, fname, redistribute=None, lazy=False):
         fname = Path(fname)
         self.fname = fname
         self.redistribute = redistribute
@@ -134,6 +131,11 @@ class EigerRawFileReader:
 
         if not lazy:
             self.master = RawMasterFile(self.fname)
+            if self.redistribute is None:
+                if self.master['Detector Type'] == 'Mythen3':
+                    self.redistribute == False
+                else:
+                    self.redistribute == True
             self.dt = to_dtype(self.master["Dynamic Range"])
             self.dr = self.master["Dynamic Range"]
             self.total_frames = self.master["Total Frames"]
@@ -230,7 +232,6 @@ class EigerRawFileReader:
             n_frames = self.total_frames
         print(f"Reading: {n_frames} frames")
         image = np.zeros((n_frames, *self.image_size), dtype=self.dt)
-        print(f'image.shape: {image.shape}')
         for f, s in list(zip(self.files, self._pwg)):
             image[s] = f.read(n_frames)
         self.current_frame += n_frames

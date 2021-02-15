@@ -9,17 +9,17 @@ source:
 
 requirements:
   build:
-    - python
+    - python {{python}}
     - numpy  {{ numpy }}
 
-  host:
-    - pip
-    - python
-    - numpy  {{ numpy }}
+  # host:
+  #   - pip
+  #   - python
+  #   - numpy  {{ numpy }}
 
   run:
     - python
-    - numpy  {{ numpy }}
+    - numpy
     - h5py
     - hdf5plugin
 
