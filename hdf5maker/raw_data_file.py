@@ -4,7 +4,7 @@ import os
 
 import _hdf5maker as _h5m
 from _hdf5maker import frame_header_dt
-
+import functools
 
 class RawDataFile:
     def __init__(self, fname, frame_size, dr, frames_per_file, lazy = False, detector_type = 'Eiger'):
@@ -13,6 +13,7 @@ class RawDataFile:
         self.fname = Path(fname)
         self.base, _, self.end = self.fname.name.rsplit('_', 2)
         self.databytes =  np.prod(frame_size )* self.dr // 8
+        self.n_chan = np.prod(frame_size )
         self.total_frames = sum(frames_per_file)
         self.frames_per_file = np.array(frames_per_file)
         self._edge = np.cumsum(self.frames_per_file)
@@ -25,7 +26,8 @@ class RawDataFile:
         if detector_type == 'Eiger':
             self._rf = _h5m.read_frame
         elif detector_type == 'Mythen3':
-            self._rf = _h5m.read_m3
+            self._rf =  functools.partial(_h5m.read_m3, n_chan = self.n_chan)
+            # self._rf = _h5m.read_m3
         else:
             raise ValueError(f"Unsupported detector type: {detector_type}")
         

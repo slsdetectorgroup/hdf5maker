@@ -19,7 +19,7 @@ static char module_docstring[] =
 /* Available functions */
 static PyObject *read_raw(PyObject *self, PyObject *args);
 static PyObject *mt_read(PyObject *self, PyObject *args);
-static PyObject *read_m3(PyObject *self, PyObject *args);
+static PyObject *read_m3(PyObject *self, PyObject *args, PyObject *kwargs);
 
 static PyArray_Descr *get_frame_header_dt();
 
@@ -27,7 +27,7 @@ static PyArray_Descr *get_frame_header_dt();
 static PyMethodDef module_methods[] = {
     {"read_frame", (PyCFunction)read_raw, METH_VARARGS, "hej"},
     {"mt_read", (PyCFunction)mt_read, METH_VARARGS, "hej"},
-    {"read_m3", (PyCFunction)read_m3, METH_VARARGS, "hej"},
+    {"read_m3", (PyCFunction)read_m3, METH_VARARGS | METH_KEYWORDS, "hej"},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef hdf5maker_def = {
@@ -49,9 +49,7 @@ PyMODINIT_FUNC PyInit__hdf5maker(void) {
     return m;
 }
 
-static PyObject *mt_read(PyObject *self, PyObject *args){
-    return NULL;
-}
+static PyObject *mt_read(PyObject *self, PyObject *args) { return NULL; }
 
 static PyObject *read_raw(PyObject *self, PyObject *args) {
     PyObject *fobj;
@@ -110,11 +108,16 @@ static PyObject *read_raw(PyObject *self, PyObject *args) {
     return ret;
 }
 
-static PyObject *read_m3(PyObject *self, PyObject *args) {
+static PyObject *read_m3(PyObject *self, PyObject *args, PyObject *kwargs) {
     PyObject *fobj;
-    int n_frames, dr;
-    if (!PyArg_ParseTuple(args, "OII", &fobj, &dr, &n_frames))
+    static char *keywords[] = {"fd","dr","n_frames", "n_chan", NULL};
+    int n_frames, dr, n_chan;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OIII", keywords, &fobj, &dr, &n_frames, &n_chan)) {
         return NULL;
+    }
+
+    // if (!PyArg_ParseTuple(args, "OIII", &fobj, &dr, &n_frames, &n_chan))
+    //     return NULL;
 
     int fd = PyObject_AsFileDescriptor(fobj);
     if (fd < 0)
@@ -124,10 +127,10 @@ static PyObject *read_m3(PyObject *self, PyObject *args) {
     PyArray_Descr *dtype = get_frame_header_dt();
     const npy_intp header_dims[] = {n_frames};
     PyObject *header = PyArray_SimpleNewFromDescr(1, header_dims, dtype);
-    npy_intp dims[] = {n_frames, M3_CHANNELS};
+    npy_intp dims[] = {n_frames, n_chan};
     PyObject *data = PyArray_SimpleNew(2, dims, dr_to_dtype(dr));
 
-    const size_t bytes_to_copy = dr * M3_CHANNELS / 8;
+    const size_t bytes_to_copy = dr * n_chan / 8;
     sls_detector_header *h_ptr =
         (sls_detector_header *)PyArray_BYTES((PyArrayObject *)header);
     uint8_t *frame_ptr = (uint8_t *)PyArray_BYTES((PyArrayObject *)data);

@@ -125,7 +125,6 @@ class RawFile:
         fname = Path(fname)
         self.fname = fname
         self.redistribute = redistribute
-        # self.base, self.run_id = parse_raw_fname(self.fname)
         self.default_value = 0  # used for module gaps
         self.current_frame = 0
 

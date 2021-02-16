@@ -38,7 +38,7 @@ def write_data_file(
         shape=data.shape,
         dtype=data.dtype,
         maxshape=(None, *data.shape[1:]),
-        # chunks = image.shape,
+        chunks = (1, data.shape[1], data.shape[2]),
         **compression,
     )
     ds.attrs["image_nr_low"] = np.int32(image_nr_low)
