@@ -66,7 +66,6 @@ if __name__ == "__main__":
     pixel_mask = raw.module_gaps
 
     #Look for additional pixels to mask 
-    # try:
     if args.bad_pixels is None:
         fname_bp = Path('bad_pixels.txt')
     else: 
@@ -109,17 +108,21 @@ if __name__ == "__main__":
     print(f'\n=== Mythen3 I0 Data ===')
     if fname_i0.exists():
         print(h5m.color.ok(f'Reading I0 from: {fname_i0}'))
-        bad_channels = h5m.read_bad_channels('bad_channels.txt')
-        
-        print(h5m.color.ok(f'Masking channels: {bad_channels}'))
         r = h5m.RawFile(fname_i0)
         data = r.read()
 
-        mask_i0 = np.zeros(data.shape[1], bool)
-        for c in bad_channels:
-            mask_i0[c] = True
-        cm = np.broadcast_to(mask_i0[np.newaxis,:], data.shape)
-        data[cm] = 0
+        bc = Path('bad_channels.txt')
+        if bc.exists():
+            bad_channels = h5m.read_bad_channels('bad_channels.txt')
+            print(h5m.color.ok(f'Masking channels: {bad_channels}'))
+            mask_i0 = np.zeros(data.shape[1], bool)
+            for c in bad_channels:
+                mask_i0[c] = True
+            cm = np.broadcast_to(mask_i0[np.newaxis,:], data.shape)
+            data[cm] = 0
+        else:
+            print(h5m.color.warning("No bad channels file found"))
+
         i0 = data.sum(axis = 1)
         if args.graphs:
             h5m.i0_graph(f'{fname_out.parent/fname_out.stem}_i0', data, i0)

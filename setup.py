@@ -3,9 +3,9 @@ from os.path import dirname, isdir, join
 import os
 import re
 import subprocess
-# import numpy as np
-
-from hdf5maker.version import get_version
+import sys
+sys.path.append('hdf5maker')
+from version import get_version
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
