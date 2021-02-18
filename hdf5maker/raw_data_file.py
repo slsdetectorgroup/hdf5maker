@@ -27,7 +27,6 @@ class RawDataFile:
             self._rf = _h5m.read_frame
         elif detector_type == 'Mythen3':
             self._rf =  functools.partial(_h5m.read_m3, n_chan = self.n_chan)
-            # self._rf = _h5m.read_m3
         else:
             raise ValueError(f"Unsupported detector type: {detector_type}")
         

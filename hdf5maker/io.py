@@ -31,3 +31,16 @@ def read_bad_pixels(fname):
             raise ValueError(f"Could not parse bad pixels file: {fname}")
 
     return pixels
+
+def read_bad_channels(fname):
+    channels = []
+    with open(fname, "r") as f:
+        try:
+            for line in f:
+                if line[0] == "#":
+                    continue
+                channels.append(int(line))
+        except:
+            raise ValueError(f"Could not parse bad channels file: {fname}")
+
+    return channels

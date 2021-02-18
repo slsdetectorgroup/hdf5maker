@@ -1,6 +1,7 @@
 from .io import to_dtype
 from .raw_data_file import RawDataFile
 from .raw_master_file import RawMasterFile
+from .formatting import color
 import numpy as np
 from pathlib import Path
 import os
@@ -132,9 +133,9 @@ class RawFile:
             self.master = RawMasterFile(self.fname)
             if self.redistribute is None:
                 if self.master['Detector Type'] == 'Mythen3':
-                    self.redistribute == False
+                    self.redistribute = False
                 else:
-                    self.redistribute == True
+                    self.redistribute = True
             self.dt = to_dtype(self.master["Dynamic Range"])
             self.dr = self.master["Dynamic Range"]
             self.total_frames = self.master["Total Frames"]

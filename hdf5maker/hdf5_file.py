@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 
 from .raw_master_file import RawMasterFile
+from .formatting import color
 
 def string_dt(s):
     tid = h5py.h5t.C_S1.copy()
@@ -29,7 +30,7 @@ def write_data_file(
     image_nr_low=1,
     compression=hdf5plugin.Bitshuffle(nelems=0, lz4=True),
 ):
-    print(f"Writing: {fname}")
+    print(color.info(f"Writing: {fname}"))
     f = h5py.File(fname, "w")
     nxentry, nxdata = create_entry_and_data(f)
     ds = nxdata.create_dataset(
@@ -50,9 +51,10 @@ def write_master_file(
     fname,
     data_files,
     pixel_mask=None,
+    i0 = None,
     compression=hdf5plugin.Bitshuffle(nelems=0, lz4=True),
 ):
-    print(f"Writing: {fname}")
+    print(color.info(f"Writing: {fname}"))
     f = h5py.File(fname, "w")
     nxentry, nxdata = create_entry_and_data(f)
 
@@ -60,11 +62,16 @@ def write_master_file(
     for i, fname in enumerate(data_files, start=1):
         f[f"entry/data/data_{i:06d}"] = h5py.ExternalLink(fname, "entry/data/data")
 
+    #Group to hold instrument specific data
+    grp = nxentry.create_group("instrument/data")
+
     # Pixel mask recognized by Albula
     if pixel_mask is not None:
-        nxentry.create_group("instrument/data")
         inst = nxentry.create_group("instrument/detector/detectorSpecific")
         inst.create_dataset("pixel_mask", data=pixel_mask.astype(np.uint8), **compression)
+
+    if i0 is not None:
+        grp.create_dataset("i0", data=i0, **compression)
     f.close()
 
 

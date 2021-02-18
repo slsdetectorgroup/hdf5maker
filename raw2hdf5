@@ -8,6 +8,7 @@ import h5py
 import multiprocessing as mp
 import time
 from argparse import ArgumentParser
+import sys
 
 def convert_data_file(fname_in, fname_out, start, stop):
     """
@@ -32,22 +33,30 @@ if __name__ == "__main__":
     parser.add_argument("path_out", help="Output path for hdf5 files", type = Path)
     parser.add_argument("-j", "--num_threads", help="Number of threads used for processing", type = int, default=4)
     parser.add_argument("-n", "--custom_name", help="Custom name for the output file",  default=None)
-    parser.add_argument("-b", "--bad_pixels", help="List of bad pixels in row, col format",  default=None)
+    parser.add_argument("-b", "--bad_pixels", help="File with of bad pixels in row, col format",  default=None, type=Path)
     parser.add_argument("-s", "--sample", help="Only convert the first 100 frames", action="store_true")
+    parser.add_argument("-g", "--graphs", help="Save graphs for fast feedback", action="store_true")
+
     args = parser.parse_args()
 
     fname_in = args.input
     args.path_out.mkdir(exist_ok = True)
     fname_out = h5m.get_output_fname(fname_in, args.path_out, args.custom_name)
+    print(h5m.color.info(f"hdfmaker-{h5m.version()} raw2hdf5 converter"))
 
+    print(f"\n=== Converting Eiger Data ===")
     # Open the raw file to find out how much data we have
-    print(f'Reading: {fname_in}')
+    if not fname_in.exists():
+        print(h5m.color.red(f"Could not find: {fname_in}, exiting."))
+        sys.exit(1)
+
+    print(h5m.color.ok(f'Reading: {fname_in}'))
     raw = h5m.RawFile(fname_in)
     num_data_files = len(raw.frames_per_file)
     start = np.zeros(num_data_files+1, dtype=np.int64)
     start[1:] = np.cumsum(raw.frames_per_file)
     frames_to_read = list(zip(start, start[1:]))
-    raw.close()
+    
 
     print(f'Image size: {raw.image_size}')
     print(f'Dynamic range: {raw.dr}')
@@ -57,18 +66,30 @@ if __name__ == "__main__":
     pixel_mask = raw.module_gaps
 
     #Look for additional pixels to mask 
-    try:
-        if args.bad_pixels is None:
-            fname_bp = Path('bad_pixels.txt')
-        else: 
-            fname_bp = args.bad_pixels
-        pixels = h5m.read_bad_pixels(fname_bp)
-        print(f'Loading pixels to mask from: {fname_bp}')
-        for p in pixels:
-            pixel_mask[p] = True
-    except:
-        print(f'No bad pixels file found')
+    # try:
+    if args.bad_pixels is None:
+        fname_bp = Path('bad_pixels.txt')
+    else: 
+        fname_bp = args.bad_pixels
+    if fname_bp.exists():
+        print(h5m.color.ok(f'Loading pixels to mask from: {fname_bp}'))
+        try:
+            pixels = h5m.read_bad_pixels(fname_bp)
+            print(h5m.color.ok(f'Setting pixel_mask true for: {pixels}'))
+            for p in pixels:
+                pixel_mask[p] = True
+        except:
+            print(h5m.color.warning(f"Could not parse bad pixel file: {fname_bp}, no pixels masked"))
+    else:
+        print(h5m.color.warning(f'No bad pixels file found'))
 
+
+    if args.graphs:
+        print('Image output')
+        image = raw.read(1)[0]
+        image[pixel_mask] = 0
+        h5m.im_plot(f'{fname_out.parent/fname_out.stem}_img', image)
+    raw.close()
 
     # Generate filenames for data out files
     fname_out_data = [fname_out.parent/f'{fname_out.stem}_{i:06d}.h5' for i in range(num_data_files)]
@@ -83,9 +104,33 @@ if __name__ == "__main__":
     pool = mp.Pool(args.num_threads)
     result = pool.starmap(convert_data_file, conversion_args)
     
+    # Try to read Mythen3 IO 
+    fname_i0 = Path(f'{raw.master.base}_I0_master_{raw.master.run_id}.raw')
+    print(f'\n=== Mythen3 I0 Data ===')
+    if fname_i0.exists():
+        print(h5m.color.ok(f'Reading I0 from: {fname_i0}'))
+        bad_channels = h5m.read_bad_channels('bad_channels.txt')
+        
+        print(h5m.color.ok(f'Masking channels: {bad_channels}'))
+        r = h5m.RawFile(fname_i0)
+        data = r.read()
+
+        mask_i0 = np.zeros(data.shape[1], bool)
+        for c in bad_channels:
+            mask_i0[c] = True
+        cm = np.broadcast_to(mask_i0[np.newaxis,:], data.shape)
+        data[cm] = 0
+        i0 = data.sum(axis = 1)
+        if args.graphs:
+            h5m.i0_graph(f'{fname_out.parent/fname_out.stem}_i0', data, i0)
+
+    else:
+        print(h5m.color.warning(f'Mythen3 I0 file: {fname_i0} not found!\nNo I0 data written to file'))
+        i0 = None
 
     # Write hdf5 master file
-    h5m.write_master_file(fname_out, fname_out_data, pixel_mask=pixel_mask)
+    print(f"\n=== Master File ===")
+    h5m.write_master_file(fname_out, fname_out_data, pixel_mask=pixel_mask, i0=i0)
     t_stop = time.time()
 
     print(f'Processing took: {t_stop-t_start:.2f}s for {frames_to_read[-1][1]} frames')
