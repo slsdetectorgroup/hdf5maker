@@ -51,12 +51,18 @@ def write_master_file(
     fname,
     data_files,
     pixel_mask=None,
+    raw_master_file = None,
     i0 = None,
     compression=hdf5plugin.Bitshuffle(nelems=0, lz4=True),
 ):
     print(color.info(f"Writing: {fname}"))
     f = h5py.File(fname, "w")
     nxentry, nxdata = create_entry_and_data(f)
+
+    if raw_master_file is not None:
+        #add attrs
+        nxdata.attrs["exptime"] = raw_master_file['Exptime'].item()
+        nxdata.attrs["period"] = raw_master_file['Period'].item()
 
     # Link written data sets:
     for i, fname in enumerate(data_files, start=1):

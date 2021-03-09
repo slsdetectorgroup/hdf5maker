@@ -90,7 +90,9 @@ if __name__ == "__main__":
     raw.close()
 
     # Generate filenames for data out files
-    fname_out_data = [fname_out.parent/f'{fname_out.stem}_{i:06d}.h5' for i in range(num_data_files)]
+    first, _, last =  fname_out.stem.rpartition("_master")
+    stem = ''.join((first, last))
+    fname_out_data = [fname_out.parent/f'{stem}_{i:06d}.h5' for i in range(num_data_files)]
     if args.sample:
         fname_out_data = fname_out_data[0:1]
         n_frames = (100, raw.total_frames)[raw.total_frames<100]
@@ -104,38 +106,41 @@ if __name__ == "__main__":
     
     # Try to read Mythen3 IO 
     fname_i0 = Path(f'{raw.master.base}_I0_master_{raw.master.run_id}.raw')
-    print(f'\n=== Mythen3 I0 Data ===')
-    if fname_i0.exists():
-        print(h5m.color.ok(f'Reading I0 from: {fname_i0}'))
-        try:
-            r = h5m.RawFile(fname_i0)
-            data = r.read()
-        except IOError as e:
-            print(h5m.color.red(f"{e}"))
+    if args.with_i0:
+        print(f'\n=== Mythen3 I0 Data ===')
+        if fname_i0.exists():
+            print(h5m.color.ok(f'Reading I0 from: {fname_i0}'))
+            try:
+                r = h5m.RawFile(fname_i0)
+                data = r.read()
+            except IOError as e:
+                print(h5m.color.red(f"{e}"))
 
-        bc = Path('bad_channels.txt')
-        if bc.exists():
-            bad_channels = h5m.read_bad_channels('bad_channels.txt')
-            print(h5m.color.ok(f'Masking channels: {bad_channels}'))
-            mask_i0 = np.zeros(data.shape[1], bool)
-            for c in bad_channels:
-                mask_i0[c] = True
-            cm = np.broadcast_to(mask_i0[np.newaxis,:], data.shape)
-            data[cm] = 0
+            bc = Path('bad_channels.txt')
+            if bc.exists():
+                bad_channels = h5m.read_bad_channels('bad_channels.txt')
+                print(h5m.color.ok(f'Masking channels: {bad_channels}'))
+                mask_i0 = np.zeros(data.shape[1], bool)
+                for c in bad_channels:
+                    mask_i0[c] = True
+                cm = np.broadcast_to(mask_i0[np.newaxis,:], data.shape)
+                data[cm] = 0
+            else:
+                print(h5m.color.warning("No bad channels file found"))
+
+            i0 = data.sum(axis = 1)
+            if args.graphs:
+                h5m.i0_graph(f'{fname_out.parent/fname_out.stem}_i0', data, i0)
+
         else:
-            print(h5m.color.warning("No bad channels file found"))
-
-        i0 = data.sum(axis = 1)
-        if args.graphs:
-            h5m.i0_graph(f'{fname_out.parent/fname_out.stem}_i0', data, i0)
-
+            print(h5m.color.warning(f'Mythen3 I0 file: {fname_i0} not found!\nNo I0 data written to file'))
+            i0 = None
     else:
-        print(h5m.color.warning(f'Mythen3 I0 file: {fname_i0} not found!\nNo I0 data written to file'))
         i0 = None
 
     # Write hdf5 master file
     print(f"\n=== Master File ===")
-    h5m.write_master_file(fname_out, fname_out_data, pixel_mask=pixel_mask, i0=i0)
+    h5m.write_master_file(fname_out, fname_out_data, pixel_mask=pixel_mask, i0=i0, raw_master_file=raw.master)
     t_stop = time.time()
 
     print(f'Processing took: {t_stop-t_start:.2f}s for {frames_to_read[-1][1]} frames')
