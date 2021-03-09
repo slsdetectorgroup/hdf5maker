@@ -30,6 +30,10 @@ class color:
         return f'{color.FAIL}{s}{color.ENDC}'
 
     @staticmethod
+    def error(s):
+            return f'{color.FAIL}ERROR: {s}{color.ENDC}'
+
+    @staticmethod
     def plotc(s):
         return f'{color.MAGENTA}{s}{color.ENDC}'
 

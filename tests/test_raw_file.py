@@ -2,7 +2,7 @@
 
 from hdf5maker.raw_file_reader import *
 from pathlib import Path
-
+import pytest
 
 def test_frames_per_file():
     total_frames = 5000
@@ -86,3 +86,9 @@ def test_read_directly_from_data_file():
     header, data = r.files[0].read(header=True)
     assert data.shape == (701,1280)
     assert np.all(np.diff(header['Frame Number'])==1)
+
+def test_deal_with_empty_file():
+    fpath = Path(__file__).parent / "data/empty_master_0.raw"
+    with pytest.raises(IOError):
+        r = RawFile(fpath)
+

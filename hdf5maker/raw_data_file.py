@@ -20,7 +20,10 @@ class RawDataFile:
         self.current_frame = 0
         if not lazy:
             self._f = open(self.fname, 'rb')
-            self.h0 = np.fromfile(self._f, count =1, dtype=frame_header_dt)[0]
+            try:
+                self.h0 = np.fromfile(self._f, count =1, dtype=frame_header_dt)[0]
+            except IndexError:
+                raise IOError(f"Could not read header from: {fname}, file size is: {os.stat(fname).st_size} bytes")
             self._f.seek(0, os.SEEK_SET)
 
         if detector_type == 'Eiger':

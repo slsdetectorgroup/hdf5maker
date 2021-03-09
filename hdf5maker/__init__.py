@@ -10,3 +10,4 @@ from .formatting import color
 from .version import version
 
 from .plots import i0_graph, im_plot
+from . import cmd_line

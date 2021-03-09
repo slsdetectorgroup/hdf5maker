@@ -6,7 +6,7 @@ def test_get_output_fname():
     fname_in = '/another/path/to/a_file_name_master_8.raw'
     out = get_output_fname(fname_in, path_out)
     assert isinstance(out, Path)
-    assert out == Path('/some/path/to/a_file_name_0008.h5')
+    assert out == Path('/some/path/to/a_file_name_master_0008.h5')
 
 
 def test_get_output_fname_custom_name():
@@ -14,4 +14,4 @@ def test_get_output_fname_custom_name():
     fname_in = '/another/path/to/a_file_name_master_19.raw'
     out = get_output_fname(fname_in, path_out, 'special')
     assert isinstance(out, Path)
-    assert out == Path('/some/path/to/special_0019.h5')
+    assert out == Path('/some/path/to/special_master_0019.h5')

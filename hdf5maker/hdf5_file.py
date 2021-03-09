@@ -83,5 +83,5 @@ def get_output_fname(fname_in, path_out, fname_out = None):
     if fname_out is None:
         fname_out = m.base.name
 
-    return path_out/f'{fname_out}_{m.run_id:04d}.h5'
+    return path_out/f'{fname_out}_master_{m.run_id:04d}.h5'
     

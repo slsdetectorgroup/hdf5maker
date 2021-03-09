@@ -1,0 +1,46 @@
+Version                    : 6.2
+TimeStamp                  : Fri Jan 15 15:57:17 2021
+
+Detector Type              : Mythen3
+Timing Mode                : trigger
+Image Size                 : 5120 bytes
+Pixels                     : [1280, 1]
+Max Frames Per File        : 10000
+Frame Discard Policy       : nodiscard
+Frame Padding              : 1
+Scan Parameters            : [enabled
+dac vth3
+start 1600
+stop 900
+step -1
+settleTime 50ms
+]
+Total Frames               : 701
+Dynamic Range              : 32
+Ten Giga                   : 0
+Period                     : 0.1s
+Counter Mask               : 0x4
+Exptime1                   : 0.1s
+Exptime2                   : 0.1s
+Exptime3                   : 0.1s
+GateDelay1                 : 0ns
+GateDelay2                 : 0ns
+GateDelay3                 : 0ns
+Gates                      : 1
+Threshold Energies         : [-1, -1, -1]
+
+#Frame Header
+Frame Number               : 8 bytes
+SubFrame Number/ExpLength  : 4 bytes
+Packet Number              : 4 bytes
+Bunch ID                   : 8 bytes
+Timestamp                  : 8 bytes
+Module Id                  : 2 bytes
+Row                        : 2 bytes
+Column                     : 2 bytes
+Reserved                   : 2 bytes
+Debug                      : 4 bytes
+Round Robin Number         : 2 bytes
+Detector Type              : 1 byte
+Header Version             : 1 byte
+Packets Caught Mask        : 64 bytes
