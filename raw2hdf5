@@ -46,6 +46,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print(h5m.color.ok(f'Opening: {fname_in}'))
+    
+    h5m.replace_total_frames(fname_in) #TODO! Leave in? 
     try:
         raw = h5m.RawFile(fname_in)
     except IOError as e:

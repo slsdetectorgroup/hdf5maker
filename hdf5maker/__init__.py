@@ -11,3 +11,4 @@ from .version import version
 
 from .plots import i0_graph, im_plot
 from . import cmd_line
+from .tools import replace_total_frames
