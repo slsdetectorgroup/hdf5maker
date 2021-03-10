@@ -44,3 +44,5 @@ def read_bad_channels(fname):
             raise ValueError(f"Could not parse bad channels file: {fname}")
 
     return channels
+
+

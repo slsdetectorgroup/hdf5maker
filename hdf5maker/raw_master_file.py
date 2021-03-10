@@ -22,8 +22,8 @@ class RawMasterFile:
         except:
             raise ValueError(f"Could not parse master file name: {self.fname}")
 
-    def data_fname(self, i):
-        return Path(f"{self.base}_d{i}_f0_{self.run_id}.raw")
+    def data_fname(self, i, findex=0):
+        return Path(f"{self.base}_d{i}_f{findex}_{self.run_id}.raw")
 
     @property
     def data_file_names(self):

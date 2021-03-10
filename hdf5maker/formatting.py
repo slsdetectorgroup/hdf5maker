@@ -28,6 +28,9 @@ class color:
     @staticmethod
     def red(s):
         return f'{color.FAIL}{s}{color.ENDC}'
+    @staticmethod
+    def yellow(s):
+        return f'{color.WARNINGY}{s}{color.ENDC}'
 
     @staticmethod
     def error(s):
