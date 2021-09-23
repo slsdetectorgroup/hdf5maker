@@ -19,9 +19,10 @@ def get_version():
 
     path = Path(__file__).parent.as_posix()
     d = dirname(path)
-    
+    cwd = os.getcwd()
 
     if isdir(join(d, '.git')):
+        os.chdir(d)
         cmd = 'git describe --tags --match [0-9]*'.split()
         try:
             version = subprocess.check_output(cmd).decode().strip()
@@ -51,7 +52,7 @@ def get_version():
             if r:
                 version = version.replace(r.group(0), '')
             version += '.dev1'
-
+        os.chdir(cwd)
     else:
         # Extract the version from the PKG-INFO file.
         with open(join(d, 'PKG-INFO')) as f:
