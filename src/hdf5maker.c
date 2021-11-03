@@ -52,6 +52,8 @@ PyMODINIT_FUNC PyInit__hdf5maker(void) {
 static PyObject *mt_read(PyObject *self, PyObject *args) { return NULL; }
 
 static PyObject *read_raw(PyObject *self, PyObject *args) {
+    //Passing in:
+    //  file, dr, n_frames
     PyObject *fobj;
     int n_frames, dr;
     if (!PyArg_ParseTuple(args, "OII", &fobj, &dr, &n_frames))

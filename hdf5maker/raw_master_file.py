@@ -71,8 +71,9 @@ class RawMasterFile:
 
         self.dict["Frame Header"] = frame_header
         self._find_number_of_modules()
-        if self.dict["Version"] != "6.2":
-            raise ValueError("This converter only supports raw files of v6.2")
+        ver = float(self.dict["Version"])
+        if ver < 6.2:
+            raise ValueError(f"File version {ver}, This converter only supports raw files of >v6.2")
         # return self._parse_values()
 
     def _parse_values(self):
