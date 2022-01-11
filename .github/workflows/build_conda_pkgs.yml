@@ -11,6 +11,7 @@ jobs:
     - name: Setup Miniconda
       uses: conda-incubator/setup-miniconda@v2.1.1
       with:
+        auto-update-conda: true
         activate-environment: test
         environment-file: .github/workflows/environment.yml
         python-version: 3.9
