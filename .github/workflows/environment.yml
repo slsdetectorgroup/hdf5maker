@@ -7,3 +7,4 @@ dependencies:
   - build
   - conda-build
   - conda-verify
+  - numpy
