@@ -1,6 +1,4 @@
-# hdf-maker-experimental
-
-*Warning: This package is under development and not yet production ready! An ever chaning API and strange bugs are to be expected* 
+# hdfmaker
 
 Python package to convert PSI Eiger raw files to hdf5 with Bitshuffle+LZ4. 
 
@@ -75,3 +73,12 @@ FILE_CONTENTS {
 
 ```
 
+## Dependencies
+
+## Compatibility
+
+We aim to follow NEP 29 regarding supported Python and Numpy versions https://numpy.org/neps/nep-0029-deprecation_policy.html#nep29
+
+At the moment this means:
+* Python 3.8-3.10
+* Numpy 1.19-1.21

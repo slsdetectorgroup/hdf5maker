@@ -12,14 +12,13 @@ requirements:
     - python {{python}}
     - numpy  {{ numpy }}
 
-  # host:
-  #   - pip
-  #   - python
-  #   - numpy  {{ numpy }}
+  host:
+    - python {{python}}
+    - numpy  {{ numpy }}
 
   run:
-    - python
-    - numpy
+    - python {{python}}
+    - numpy {{ numpy }}
     - h5py
     - hdf5plugin
     - matplotlib

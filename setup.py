@@ -6,6 +6,9 @@ import subprocess
 import sys
 sys.path.append('hdf5maker')
 from version import get_version
+
+import numpy as np
+
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
@@ -13,13 +16,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 c_ext = setuptools.Extension("_hdf5maker",
                   sources = ["src/raw_file.c", "src/hdf5maker.c"],
                   libraries = ['c',],
-                #   include_dirs=[np.get_include(),],
+                  include_dirs=[np.get_include(),],
                   extra_compile_args = [],
                   )
 
 setuptools.setup(
     name="hdf5maker",
-    version= '2021.3.10.dev0',
+    version= '2021.11.3',
     author="Erik Frojdh",
     author_email="erik.frojdh@psi.ch",
     description="Eiger raw file to hdf5 converter",

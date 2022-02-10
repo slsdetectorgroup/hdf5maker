@@ -1,0 +1,10 @@
+name: buildenv
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - build
+  - conda-build
+  - conda-verify
+  - numpy
