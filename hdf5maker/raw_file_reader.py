@@ -41,7 +41,6 @@ def split_counts(image):
     Splits counts on full image. 
     """
     row, col = image.shape
-    print(f'{image.shape=}')
     while row > 0:
         a = row - 256
         b = a - 3
@@ -60,7 +59,6 @@ def split_counts(image):
             b = col - (c + 3)
             if b<0:
                 break
-            print(f'{a=} {b=}')
             left = image[:, a] / 2
             right = image[:, b] / 2
             r = np.random.randint(0, 2, left.size)
