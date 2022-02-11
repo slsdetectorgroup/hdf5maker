@@ -3,9 +3,10 @@ import re
 import numpy as np
 
 class RawMasterFile:
-    def __init__(self, fname, lazy=False):
+    def __init__(self, fname, lazy=False, fastquad=False):
         self.dict = {}
         self.fname = Path(fname)
+        self.fastquad = fastquad
         if not lazy:
             self._parse_fname()
             self._read()
@@ -28,7 +29,12 @@ class RawMasterFile:
     @property
     def data_file_names(self):
         if self.dict["Detector Type"] == "Eiger":
-            return [self.data_fname(i) for i in range(self.dict["nmod"] * 2)]
+            files = [self.data_fname(i) for i in range(self.dict["nmod"] * 2)]
+            if self.fastquad:
+                return files[0::2]
+            else:
+                 return files
+        
         return [self.data_fname(i) for i in range(self.dict["nmod"])]
 
     def _find_number_of_modules(self):

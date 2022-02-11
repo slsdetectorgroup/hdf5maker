@@ -11,20 +11,28 @@ import _hdf5maker as _h5m
 frame_header_dt = _h5m.frame_header_dt
 
 
-def get_module_mask():
+def get_module_mask(image_size = (514,1030)):
     """
-    Selects real pixels from module with gap pixels
+    Returns a mask that selects real pixels from an image that 
+    also contains extra gap pixels. Assumes that the module
+    size is 514, 1030 unless specified smaller.
     """
-    module_mask = np.zeros((514, 1030), dtype=np.bool_)
+    #TODO! Deal with large Mythen3
+    if len(image_size)==1:
+        return np.ones((image_size), dtype=np.bool_)
+
+    image_size = np.min(((514,1030),image_size), axis = 0)
+    module_mask = np.zeros((image_size), dtype=np.bool_)
     module_mask[0:256, 0:256] = True
     module_mask[0:256, 258:514] = True
-    module_mask[0:256, 516:772] = True
-    module_mask[0:256, 774:1030] = True
-
     module_mask[258:514, 0:256] = True
     module_mask[258:514, 258:514] = True
-    module_mask[258:514, 516:772] = True
-    module_mask[258:514, 774:1030] = True
+
+    if np.all(image_size == (514,1030)):
+        module_mask[0:256, 516:772] = True
+        module_mask[0:256, 774:1030] = True
+        module_mask[258:514, 516:772] = True
+        module_mask[258:514, 774:1030] = True
     return module_mask
 
 
@@ -62,14 +70,19 @@ def calculate_size_and_slices(geo):
     dt = np.int32
     raw_image_size = np.array(geo, dtype=dt)
 
-    # Constants
+    # Constishstans
     raw_module_size = np.array((512, 1024), dtype=dt)
     module_with_gappixels = np.array((514, 1030), dtype=dt)
     module_gaps = np.array((36, 0), dtype=dt)
     unit_size = np.array((256, 512), dtype=dt)
 
+    if np.all(raw_image_size == (512,512)):
+        raw_module_size = np.array((512, 512), dtype=dt)
+        module_with_gappixels = np.array((514, 514), dtype=dt)
+
     # TODO add assertions
     nmod = raw_image_size // raw_module_size
+    
 
     # TODO add assertions
     image_size = nmod * module_with_gappixels + module_gaps * (nmod - 1)
@@ -115,22 +128,25 @@ def calculate_size_and_slices(geo):
             modules.append((slice(*rs), slice(*cs)))
             y -= 514 + 36
 
+    #override things in case of fastquad
+    if np.all(image_size == (514,514)):
+    #     ports = [(slice(None, None, None),slice(0,256,1),slice(0,512,1)),(slice(None,None,None),slice(256,514,1), slice(0,512,1))]
+        port_wgap =[(slice(None,None,None),slice(257,514,1), slice(0,514,1)), (slice(None, None, None),slice(0,257,1),slice(0,514,1))]
     return image_size, ports, port_wgap, modules
 
 
 
 class RawFile:
-    module_mask = get_module_mask()
-
-    def __init__(self, fname, redistribute=None, lazy=False):
+    def __init__(self, fname, redistribute=None, lazy=False, fastquad=False):
         fname = Path(fname)
         self.fname = fname
         self.redistribute = redistribute
         self.default_value = 0  # used for module gaps
         self.current_frame = 0
+        self.fastquad = fastquad
 
         if not lazy:
-            self.master = RawMasterFile(self.fname)
+            self.master = RawMasterFile(self.fname, fastquad=fastquad)
             if self.redistribute is None:
                 if self.master['Detector Type'] == 'Mythen3':
                     self.redistribute = False
@@ -146,6 +162,9 @@ class RawFile:
             )
             self._fid = 0
 
+
+  
+
             # open the first files
             self.files = [
                 RawDataFile(
@@ -158,6 +177,8 @@ class RawFile:
                 for f in self.master.data_file_names
             ]
             self.find_geometry()
+
+            
 
             if self.master["Detector Type"] == "Mythen3":
                 self.image_size = self._raw_pixels[1:2]
@@ -172,6 +193,8 @@ class RawFile:
                     self._modules,
                 ) = calculate_size_and_slices(self._raw_pixels)
 
+
+            self.module_mask = get_module_mask(self.image_size)
             self.mask = np.zeros(self.image_size, dtype=np.bool_)
             for mod in self._modules:
                 self.mask[mod] = self.module_mask
@@ -232,8 +255,12 @@ class RawFile:
             n_frames = self.total_frames
         print(f"Reading: {n_frames} frames")
         image = np.zeros((n_frames, *self.image_size), dtype=self.dt)
+
         for f, s in list(zip(self.files, self._pwg)):
-            image[s] = f.read(n_frames)
+            if self.fastquad:
+                image[s] = f.read(n_frames)[:,:,0:514]
+            else:
+                image[s] = f.read(n_frames)
         self.current_frame += n_frames
 
         if self.redistribute:
