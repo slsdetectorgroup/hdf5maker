@@ -37,7 +37,11 @@ def get_module_mask(image_size = (514,1030)):
 
 
 def split_counts(image):
+    """
+    Splits counts on full image. 
+    """
     row, col = image.shape
+    print(f'{image.shape=}')
     while row > 0:
         a = row - 256
         b = a - 3
@@ -54,6 +58,9 @@ def split_counts(image):
         for c in [256, 514, 772]:
             a = col - c
             b = col - (c + 3)
+            if b<0:
+                break
+            print(f'{a=} {b=}')
             left = image[:, a] / 2
             right = image[:, b] / 2
             r = np.random.randint(0, 2, left.size)
