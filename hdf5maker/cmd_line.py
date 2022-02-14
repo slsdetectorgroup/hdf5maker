@@ -11,4 +11,5 @@ def get_argument_parser():
     parser.add_argument("-s", "--sample", help="Only convert the first 100 frames", action="store_true")
     parser.add_argument("-g", "--graphs", help="Save graphs for fast feedback", action="store_true")
     parser.add_argument("-i0", "--with_i0", help="Process Mythen3 i0 data", action="store_true")
+    parser.add_argument("-q", "--fastquad", help="Read data from Eiger fastquad", action="store_true")
     return parser
