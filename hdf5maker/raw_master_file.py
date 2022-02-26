@@ -99,6 +99,7 @@ class RawMasterFile:
                 "Ten Giga",
                 "Quad",
                 "Number of Lines read out",
+                "Number of UDP Interfaces"
             )
         )
 

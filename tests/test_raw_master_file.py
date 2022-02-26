@@ -2,12 +2,24 @@
 from hdf5maker.raw_master_file import *
 from pathlib import Path
 import numpy as np
+import pytest
 
 def test_parse_raw_fname():
     m = RawMasterFile('test_master_1.raw', lazy= True)
     m._parse_fname()
     assert m.run_id == 1
     assert m.base == Path('test')
+
+def test_parse_raw_fname_with_multiple_underscores():
+    m = RawMasterFile('some_file_that_is_master_876.raw', lazy= True)
+    m._parse_fname()
+    assert m.run_id == 876
+    assert m.base == Path('some_file_that_is')
+
+def test_parse_fname_without_index_throws():
+    m = RawMasterFile('file_master).raw', lazy= True)
+    with pytest.raises(ValueError):
+        m._parse_fname()
 
 
 def test_generate_data_fname():
@@ -97,6 +109,21 @@ def test_mythen3_master_file_data_file_names():
     assert m.data_file_names[0] == fpath.parent/'TiScan_d0_f0_0.raw'
     assert m.data_file_names[1] == fpath.parent/'TiScan_d1_f0_0.raw'
 
+def test_parse_jungfrau_master_file():
+    fpath = Path(__file__).parent / "data/run_master_16.raw"
+    m = RawMasterFile(fpath)
+    assert m['Detector Type'] == 'Jungfrau'
+    assert m["Timing Mode"] == "auto"
+    assert m['Image Size'] == 1048576
+    assert m['Pixels'] == (1024, 512)
+    assert m['Max Frames Per File'] == 10000
+    assert m['Frame Discard Policy'] == 'nodiscard'
+    assert m['Frame Padding'] == 1
+    assert m['Scan Parameters'] == '[disabled]'
+    assert m['Total Frames'] == 10
+    assert m['Exptime'] == np.timedelta64(500, 'us')
+    assert m['Period'] == 0
+    assert m['Number of UDP Interfaces'] == 1
 
 
 def test_parse_exptime():
