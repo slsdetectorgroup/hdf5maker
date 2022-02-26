@@ -38,14 +38,20 @@ class RawMasterFile:
         return [self.data_fname(i) for i in range(self.dict["nmod"])]
 
     def _find_number_of_modules(self):
-        i = 0
-        while self.data_fname(i).exists():
-            i += 1
-        if self.dict["Detector Type"] == "Eiger":
-            assert i % 2 == 0
-            self.dict["nmod"] = i // 2
+        """Guess the number of modules from the files on disk"""
+
+        #TODO! Refactor special case!
+        if self.fastquad:
+            self.dict["nmod"] = 2
         else:
-            self.dict["nmod"] = i
+            i = 0
+            while self.data_fname(i).exists():
+                i += 1
+            if self.dict["Detector Type"] == "Eiger":
+                assert i % 2 == 0, f"i={i}"
+                self.dict["nmod"] = i // 2
+            else:
+                self.dict["nmod"] = i
 
     def _read(self):
         """
