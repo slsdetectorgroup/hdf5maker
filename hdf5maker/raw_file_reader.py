@@ -144,6 +144,15 @@ def calculate_size_and_slices(geo):
 class RawFile:
     def __init__(self, fname, redistribute=None, lazy=False, fastquad=False):
         fname = Path(fname)
+
+        #Deal with both old and new suffix
+        if fname.suffix == '':
+            if fname.with_suffix('.json').exists():
+                fname = fname.with_suffix('.json')
+            elif fname.with_suffix('.raw').exists():
+                fname = fname.with_suffix('.raw')
+            else:
+                raise IOError("Could not find raw master file (raw/json)")
         self.fname = fname
         self.redistribute = redistribute
         self.default_value = 0  # used for module gaps

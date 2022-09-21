@@ -50,7 +50,7 @@ if __name__ == "__main__":
     print(h5m.color.ok(f"Opening: {fname_in}"))
     print(f"{args.fastquad=}")
 
-    h5m.replace_total_frames(fname_in)  # TODO! Leave in?
+    # h5m.replace_total_frames(fname_in)  # TODO! Leave in?
     try:
         raw = h5m.RawFile(fname_in, fastquad=args.fastquad)
     except IOError as e:
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     pool = mp.Pool(args.num_threads)
     result = pool.starmap(convert_data_file, conversion_args)
 
-    # Try to read Mythen3 IO
-    fname_i0 = Path(f"{raw.master.base}_I0_master_{raw.master.run_id}.raw")
+    # Try to read Mythen3 IO (could be old .raw or new .json)
+    fname_i0 = Path(f"{raw.master.base}_I0_master_{raw.master.run_id}")
     if args.with_i0:
         print(f"\n=== Mythen3 I0 Data ===")
         if fname_i0.exists():

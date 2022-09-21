@@ -1,9 +1,11 @@
 from pathlib import Path
 import re
 import numpy as np
+import json
 
 class RawMasterFile:
     def __init__(self, fname, lazy=False, fastquad=False):
+        self.json = False
         self.dict = {}
         self.fname = Path(fname)
         self.fastquad = fastquad
@@ -58,6 +60,12 @@ class RawMasterFile:
         Read master file and return contents as a dict
         """
         self.dict = {}
+        if self.fname.suffix == ".json":
+            print("JSON")
+            with open(self.fname) as f:
+                self.dict = json.load(f)
+            self.json = True
+            return
 
         with open(self.fname) as f:
             lines = f.readlines()
@@ -103,12 +111,19 @@ class RawMasterFile:
             )
         )
 
-        for field in int_fields.intersection(self.dict.keys()):
-            self.dict[field] = int(self.dict[field].split()[0])
+        #Workaround for dealing with .json and .raw master files
+        if not self.json:
+            for field in int_fields.intersection(self.dict.keys()):
+                self.dict[field] = int(self.dict[field].split()[0])
+            self.dict["Pixels"] = tuple(
+                int(i) for i in self.dict["Pixels"].strip("[]").split(",")
+            )
+        if self.json:
+            
+            self.dict['Image Size'] = self.dict["Image Size in bytes"]
+            self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
+            self.dict['nmod'] = self.dict['Geometry']['x']*self.dict['Geometry']['y']
 
-        self.dict["Pixels"] = tuple(
-            int(i) for i in self.dict["Pixels"].strip("[]").split(",")
-        )
 
         if self.dict['Detector Type'] == 'Mythen3':
             self.dict["Exptime1"] = self.to_nanoseconds(self.dict["Exptime1"])
