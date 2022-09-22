@@ -110,6 +110,24 @@ class RawMasterFile:
                 "Number of UDP Interfaces"
             )
         )
+        time_fields = set((
+            "Exptime", 
+            "Exptime1", 
+            "Exptime2",
+            "Exptime3",
+            "GateDelay1",
+            "GateDelay2",
+            "GateDelay3",
+            "SubExptime",#Eiger
+            "SubPeriod", #Eiger
+            "Period"
+
+        ))
+
+        #some fields might not exist for all detectors 
+        #hence using intersection
+        for field in time_fields.intersection(self.dict.keys()):
+            self.dict[field] = self.to_nanoseconds(self.dict[field])
 
         #Workaround for dealing with .json and .raw master files
         if not self.json:
@@ -119,24 +137,10 @@ class RawMasterFile:
                 int(i) for i in self.dict["Pixels"].strip("[]").split(",")
             )
         if self.json:
-            
             self.dict['Image Size'] = self.dict["Image Size in bytes"]
             self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
             self.dict['nmod'] = self.dict['Geometry']['x']*self.dict['Geometry']['y']
 
-
-        if self.dict['Detector Type'] == 'Mythen3':
-            self.dict["Exptime1"] = self.to_nanoseconds(self.dict["Exptime1"])
-            self.dict["Exptime2"] = self.to_nanoseconds(self.dict["Exptime2"])
-            self.dict["Exptime3"] = self.to_nanoseconds(self.dict["Exptime3"])
-        else:
-            self.dict["Exptime"] = self.to_nanoseconds(self.dict["Exptime"])
-        
-        if self.dict['Detector Type'] == 'Eiger':
-            self.dict["SubExptime"] = self.to_nanoseconds(self.dict["SubExptime"])
-            self.dict["SubPeriod"] = self.to_nanoseconds(self.dict["SubPeriod"])
-
-        self.dict["Period"] = self.to_nanoseconds(self.dict["Period"])
 
         if "Rate Corrections" in self.dict:
             self.dict["Rate Corrections"] = (
