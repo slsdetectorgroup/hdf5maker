@@ -2,6 +2,7 @@ from .io import to_dtype
 from .raw_data_file import RawDataFile
 from .raw_master_file import RawMasterFile
 from .formatting import color
+from .tools import find_suffix
 import numpy as np
 from pathlib import Path
 import os
@@ -146,13 +147,9 @@ class RawFile:
         fname = Path(fname)
 
         #Deal with both old and new suffix
-        if fname.suffix == '':
-            if fname.with_suffix('.json').exists():
-                fname = fname.with_suffix('.json')
-            elif fname.with_suffix('.raw').exists():
-                fname = fname.with_suffix('.raw')
-            else:
-                raise IOError("Could not find raw master file (raw/json)")
+        fname = find_suffix(fname)
+        if not fname.exists():
+            raise IOError("Could not find raw master file: {fname}")
         self.fname = fname
         self.redistribute = redistribute
         self.default_value = 0  # used for module gaps
