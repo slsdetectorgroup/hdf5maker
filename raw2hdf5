@@ -3,6 +3,7 @@ import os
 import numpy as np
 from pathlib import Path
 import hdf5maker as h5m
+from hdf5maker.tools import find_suffix
 import hdf5plugin
 import h5py
 import multiprocessing as mp
@@ -12,7 +13,6 @@ import sys
 
 # Allow for running without X sever available
 import matplotlib
-
 matplotlib.use("Agg")
 
 
@@ -50,7 +50,10 @@ if __name__ == "__main__":
     print(h5m.color.ok(f"Opening: {fname_in}"))
     print(f"{args.fastquad=}")
 
-    h5m.replace_total_frames(fname_in)  # TODO! Leave in?
+
+    # Replace the Total Frames value in the raw file
+    # Needed for pre 6.3 since we don't have Frames in File
+    h5m.replace_total_frames(fname_in)
     try:
         raw = h5m.RawFile(fname_in, fastquad=args.fastquad)
     except IOError as e:
@@ -116,9 +119,10 @@ if __name__ == "__main__":
     pool = mp.Pool(args.num_threads)
     result = pool.starmap(convert_data_file, conversion_args)
 
-    # Try to read Mythen3 IO
-    fname_i0 = Path(f"{raw.master.base}_I0_master_{raw.master.run_id}.raw")
+    # Try to read Mythen3 IO (could be old .raw or new .json)
     if args.with_i0:
+        fname_i0 = Path(f"{raw.master.base}_I0_master_{raw.master.run_id}")
+        fname_i0 = find_suffix(fname_i0)
         print(f"\n=== Mythen3 I0 Data ===")
         if fname_i0.exists():
             print(h5m.color.ok(f"Reading I0 from: {fname_i0}"))

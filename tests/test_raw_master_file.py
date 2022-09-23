@@ -43,7 +43,7 @@ def test_read_eiger_master_file():
     fpath = Path(__file__).parent / "data/sample_master_2.raw"
     m = RawMasterFile(fpath)
 
-    assert m['Version'] == '6.2'
+    assert m['Version'] == 6.2
 
     assert m['Detector Type'] == 'Eiger'
     assert m['Timing Mode'] == 'auto'
@@ -70,7 +70,7 @@ def test_read_mythen3_master_file():
     fpath = Path(__file__).parent / "data/TiScan_master_0.raw"
     m = RawMasterFile(fpath)
 
-    assert m['Version'] == '6.2'
+    assert m['Version'] == 6.2
 
     assert m['Detector Type'] == 'Mythen3'
     assert m['Timing Mode'] == 'trigger'
