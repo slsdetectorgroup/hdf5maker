@@ -129,7 +129,7 @@ class RawMasterFile:
         for field in time_fields.intersection(self.dict.keys()):
             self.dict[field] = self.to_nanoseconds(self.dict[field])
 
-        #Parse both .json and .raw master files
+        #Parse bothx .json and .raw master files
         if self.json:
             self.dict['Image Size'] = self.dict["Image Size in bytes"]
             self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
@@ -149,6 +149,13 @@ class RawMasterFile:
             assert (
                 self.dict["nmod"] == n
             ), f'nmod from Rate Corrections {n} differs from nmod {self.dict["nmod"]}'
+
+        #Parse threshold for Mythen3 (if needed)
+        if "Threshold Energies" in self.dict.keys():
+            th = self.dict["Threshold Energies"]
+            if isinstance(th, str):
+                th = [int(i) for i in th.strip('[]').split(',')]
+                self.dict["Threshold Energies"] = th
 
     @staticmethod
     def to_nanoseconds(t):

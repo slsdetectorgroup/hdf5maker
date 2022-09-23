@@ -42,4 +42,9 @@ def test_load_master():
     assert m['GateDelay2'] == np.timedelta64(0, 'ns')
     assert m['GateDelay3'] == np.timedelta64(0, 'ns')
 
+    assert m['Gates'] == 1
+    assert m['Threshold Energies'] == [-1, -1, -1]
+
+    assert m['Frames in File'] == 1
+
     assert m['nmod'] == 1
