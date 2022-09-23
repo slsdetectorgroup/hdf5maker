@@ -1,11 +1,14 @@
 from pathlib import Path
 import re
 import numpy as np
+import json
 
 class RawMasterFile:
-    def __init__(self, fname, lazy=False):
+    def __init__(self, fname, lazy=False, fastquad=False):
+        self.json = False
         self.dict = {}
         self.fname = Path(fname)
+        self.fastquad = fastquad
         if not lazy:
             self._parse_fname()
             self._read()
@@ -28,24 +31,40 @@ class RawMasterFile:
     @property
     def data_file_names(self):
         if self.dict["Detector Type"] == "Eiger":
-            return [self.data_fname(i) for i in range(self.dict["nmod"] * 2)]
+            files = [self.data_fname(i) for i in range(self.dict["nmod"] * 2)]
+            if self.fastquad:
+                return files[0::2]
+            else:
+                 return files
+        
         return [self.data_fname(i) for i in range(self.dict["nmod"])]
 
     def _find_number_of_modules(self):
-        i = 0
-        while self.data_fname(i).exists():
-            i += 1
-        if self.dict["Detector Type"] == "Eiger":
-            assert i % 2 == 0
-            self.dict["nmod"] = i // 2
+        """Guess the number of modules from the files on disk"""
+
+        #TODO! Refactor special case!
+        if self.fastquad:
+            self.dict["nmod"] = 2
         else:
-            self.dict["nmod"] = i
+            i = 0
+            while self.data_fname(i).exists():
+                i += 1
+            if self.dict["Detector Type"] == "Eiger":
+                assert i % 2 == 0, f"i={i}"
+                self.dict["nmod"] = i // 2
+            else:
+                self.dict["nmod"] = i
 
     def _read(self):
         """
         Read master file and return contents as a dict
         """
         self.dict = {}
+        if self.fname.suffix == ".json":
+            with open(self.fname) as f:
+                self.dict = json.load(f)
+            self.json = True
+            return
 
         with open(self.fname) as f:
             lines = f.readlines()
@@ -87,28 +106,40 @@ class RawMasterFile:
                 "Ten Giga",
                 "Quad",
                 "Number of Lines read out",
+                "Number of UDP Interfaces"
             )
         )
+        time_fields = set((
+            "Exptime", 
+            "Exptime1", 
+            "Exptime2",
+            "Exptime3",
+            "GateDelay1",
+            "GateDelay2",
+            "GateDelay3",
+            "SubExptime",#Eiger
+            "SubPeriod", #Eiger
+            "Period"
 
-        for field in int_fields.intersection(self.dict.keys()):
-            self.dict[field] = int(self.dict[field].split()[0])
+        ))
 
-        self.dict["Pixels"] = tuple(
-            int(i) for i in self.dict["Pixels"].strip("[]").split(",")
-        )
+        #some fields might not exist for all detectors 
+        #hence using intersection
+        for field in time_fields.intersection(self.dict.keys()):
+            self.dict[field] = self.to_nanoseconds(self.dict[field])
 
-        if self.dict['Detector Type'] == 'Mythen3':
-            self.dict["Exptime1"] = self.to_nanoseconds(self.dict["Exptime1"])
-            self.dict["Exptime2"] = self.to_nanoseconds(self.dict["Exptime2"])
-            self.dict["Exptime3"] = self.to_nanoseconds(self.dict["Exptime3"])
+        #Parse bothx .json and .raw master files
+        if self.json:
+            self.dict['Image Size'] = self.dict["Image Size in bytes"]
+            self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
+            self.dict['nmod'] = self.dict['Geometry']['x']*self.dict['Geometry']['y']
         else:
-            self.dict["Exptime"] = self.to_nanoseconds(self.dict["Exptime"])
-        
-        if self.dict['Detector Type'] == 'Eiger':
-            self.dict["SubExptime"] = self.to_nanoseconds(self.dict["SubExptime"])
-            self.dict["SubPeriod"] = self.to_nanoseconds(self.dict["SubPeriod"])
-
-        self.dict["Period"] = self.to_nanoseconds(self.dict["Period"])
+            self.dict["Version"] = float(self.dict["Version"])
+            for field in int_fields.intersection(self.dict.keys()):
+                self.dict[field] = int(self.dict[field].split()[0])
+            self.dict["Pixels"] = tuple(
+                int(i) for i in self.dict["Pixels"].strip("[]").split(",")
+            )
 
         if "Rate Corrections" in self.dict:
             self.dict["Rate Corrections"] = (
@@ -118,6 +149,13 @@ class RawMasterFile:
             assert (
                 self.dict["nmod"] == n
             ), f'nmod from Rate Corrections {n} differs from nmod {self.dict["nmod"]}'
+
+        #Parse threshold for Mythen3 (if needed)
+        if "Threshold Energies" in self.dict.keys():
+            th = self.dict["Threshold Energies"]
+            if isinstance(th, str):
+                th = [int(i) for i in th.strip('[]').split(',')]
+                self.dict["Threshold Energies"] = th
 
     @staticmethod
     def to_nanoseconds(t):

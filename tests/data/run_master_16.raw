@@ -1,0 +1,31 @@
+Version                    : 6.2
+TimeStamp                  : Tue Apr  6 15:01:45 2021
+
+Detector Type              : Jungfrau
+Timing Mode                : auto
+Image Size                 : 1048576 bytes
+Pixels                     : [1024, 512]
+Max Frames Per File        : 10000
+Frame Discard Policy       : nodiscard
+Frame Padding              : 1
+Scan Parameters            : [disabled]
+Total Frames               : 10
+Exptime                    : 500us
+Period                     : 0ns
+Number of UDP Interfaces   : 1
+
+#Frame Header
+Frame Number               : 8 bytes
+SubFrame Number/ExpLength  : 4 bytes
+Packet Number              : 4 bytes
+Bunch ID                   : 8 bytes
+Timestamp                  : 8 bytes
+Module Id                  : 2 bytes
+Row                        : 2 bytes
+Column                     : 2 bytes
+Reserved                   : 2 bytes
+Debug                      : 4 bytes
+Round Robin Number         : 2 bytes
+Detector Type              : 1 byte
+Header Version             : 1 byte
+Packets Caught Mask        : 64 bytes

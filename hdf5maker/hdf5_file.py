@@ -6,6 +6,36 @@ import numpy as np
 from .raw_master_file import RawMasterFile
 from .formatting import color
 
+class Hdf5File:
+    """
+    Interface to read hdf5 file written by hdf5maker should also accept
+    Dectris files
+    """
+    def __init__(self, fname, options = 'r'):
+        self._f = h5py.File(fname, options)
+        self._data_sets = [ds for ds in self._f['entry/data'].values()]
+        
+        edge = [ds.shape[0] for ds in self._data_sets]
+        self._last_frame = np.cumsum(edge)
+        self.n_frames = sum(edge)
+        self.n_datasets = len(self._data_sets)
+
+
+    def __getitem__(self, frame_number):
+        #TODO! Reuse code from RawFile
+        if frame_number < self.n_frames:
+            dataset_index = np.argmax(self._last_frame > frame_number)
+            local_frame_index = frame_number - (self._last_frame[dataset_index]-self._data_sets[dataset_index].shape[0])
+            print(f'{dataset_index=}, {local_frame_index=}')
+            return self._data_sets[dataset_index][local_frame_index]
+        else:
+            raise ValueError("Requested frame number exceeds number of frames in file")
+
+    def __iter__(self):
+        for data_set in self._data_sets:
+            for frame in data_set:
+                yield frame
+
 def string_dt(s):
     tid = h5py.h5t.C_S1.copy()
     tid.set_size(len(s))

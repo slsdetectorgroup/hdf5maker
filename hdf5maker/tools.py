@@ -4,6 +4,18 @@ from .formatting import color
 from .raw_master_file import RawMasterFile
 from pathlib import Path
 
+def find_suffix(fname):
+    """Called with a Path check for suffix"""
+    if fname.suffix == '':
+        if fname.with_suffix('.json').exists():
+            fname = fname.with_suffix('.json')
+        elif fname.with_suffix('.raw').exists():
+            fname = fname.with_suffix('.raw')
+    return fname
+        # else:
+        #     raise IOError(f"Could not find raw master file (raw/json): {fname}")
+        
+
 def replace_total_frames(fname):
     fname = Path(fname)
 

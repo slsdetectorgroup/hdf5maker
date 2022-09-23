@@ -80,6 +80,13 @@ def test_read_one_mythen3_file():
     assert data.shape == (701,2560)
     assert data.dtype == np.uint32
 
+def test_read_one_mythen3_file_no_suffix():
+    fpath = Path(__file__).parent / "data/TiScan_master_0"
+    r = RawFile(fpath)
+    data = r.read()
+    assert data.shape == (701,2560)
+    assert data.dtype == np.uint32
+
 def test_read_directly_from_data_file():
     fpath = Path(__file__).parent / "data/TiScan_master_0.raw"
     r = RawFile(fpath)
@@ -92,3 +99,42 @@ def test_deal_with_empty_file():
     with pytest.raises(IOError):
         r = RawFile(fpath)
 
+def test_compare_fastquad_and_module():
+    fpath = Path(__file__).parent / "data/run_master_0.raw"
+    data1 = RawFile(fpath, redistribute=False).read()
+    assert data1.shape == (1,514,1030)
+
+    data2 = RawFile(fpath, redistribute=False, fastquad=True).read()
+    assert data2.shape == (1,514,514)
+
+    #When we don't redistribute data should be exactly the same
+    assert np.all(data1[:,:,0:514] == data2)
+
+
+def test_read_one_mythen3_file_with_new_header():
+    fpath = Path(__file__).parent / "data/m3_master_0.json"
+    f = RawFile(fpath)
+    data = f.read()
+    assert data.shape == (1,3840)
+    assert data[0,0] == 0
+    assert data[0,1] == 1
+
+def test_read_one_mythen3_file_with_new_header_no_suffix():
+    fpath = Path(__file__).parent / "data/m3_master_0"
+    f = RawFile(fpath)
+    data = f.read()
+    assert data.shape == (1,3840)
+    assert data[0,0] == 0
+    assert data[0,1] == 1
+
+def test_read_fastquad():
+    fpath = Path(__file__).parent / "data/run_master_0.raw"
+    image = RawFile(fpath, fastquad=True).read()
+    assert image.shape == (1,514,514)
+    
+    #Check for regression
+    gold_standard = np.load(Path(__file__).parent / "data/run_0.npy")
+    mask = np.load(Path(__file__).parent / "data/mask.npy")[0:514,0:514]
+    pm = np.broadcast_to(mask[np.newaxis,:,:], image.shape)
+    assert np.all(image[pm] == gold_standard[pm])
+    
