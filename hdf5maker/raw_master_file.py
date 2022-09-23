@@ -129,18 +129,17 @@ class RawMasterFile:
         for field in time_fields.intersection(self.dict.keys()):
             self.dict[field] = self.to_nanoseconds(self.dict[field])
 
-        #Workaround for dealing with .json and .raw master files
-        if not self.json:
+        #Parse both .json and .raw master files
+        if self.json:
+            self.dict['Image Size'] = self.dict["Image Size in bytes"]
+            self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
+            self.dict['nmod'] = self.dict['Geometry']['x']*self.dict['Geometry']['y']
+        else:
             for field in int_fields.intersection(self.dict.keys()):
                 self.dict[field] = int(self.dict[field].split()[0])
             self.dict["Pixels"] = tuple(
                 int(i) for i in self.dict["Pixels"].strip("[]").split(",")
             )
-        if self.json:
-            self.dict['Image Size'] = self.dict["Image Size in bytes"]
-            self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
-            self.dict['nmod'] = self.dict['Geometry']['x']*self.dict['Geometry']['y']
-
 
         if "Rate Corrections" in self.dict:
             self.dict["Rate Corrections"] = (
