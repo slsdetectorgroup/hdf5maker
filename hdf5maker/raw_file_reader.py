@@ -76,7 +76,7 @@ def calculate_size_and_slices(geo):
     dt = np.int32
     raw_image_size = np.array(geo, dtype=dt)
 
-    # Constishstans
+    # Constraints
     raw_module_size = np.array((512, 1024), dtype=dt)
     module_with_gappixels = np.array((514, 1030), dtype=dt)
     module_gaps = np.array((36, 0), dtype=dt)
@@ -149,7 +149,7 @@ class RawFile:
         #Deal with both old and new suffix
         fname = find_suffix(fname)
         if not fname.exists():
-            raise IOError("Could not find raw master file: {fname}")
+            raise IOError(f"Could not find raw master file: {fname}")
         self.fname = fname
         self.redistribute = redistribute
         self.default_value = 0  # used for module gaps
@@ -172,9 +172,6 @@ class RawFile:
                 self.total_frames, self.max_frames_per_file
             )
             self._fid = 0
-
-
-  
 
             # open the first files
             self.files = [

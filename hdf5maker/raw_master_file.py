@@ -61,7 +61,6 @@ class RawMasterFile:
         """
         self.dict = {}
         if self.fname.suffix == ".json":
-            print("JSON")
             with open(self.fname) as f:
                 self.dict = json.load(f)
             self.json = True
@@ -135,6 +134,7 @@ class RawMasterFile:
             self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
             self.dict['nmod'] = self.dict['Geometry']['x']*self.dict['Geometry']['y']
         else:
+            self.dict["Version"] = float(self.dict["Version"])
             for field in int_fields.intersection(self.dict.keys()):
                 self.dict[field] = int(self.dict[field].split()[0])
             self.dict["Pixels"] = tuple(
