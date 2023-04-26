@@ -91,8 +91,8 @@ class RawMasterFile:
 
         self.dict["Frame Header"] = frame_header
         self._find_number_of_modules()
-        ver = float(self.dict["Version"])
-        if ver < 6.2:
+        self.dict["Version"] = float(self.dict["Version"])
+        if self.dict["Version"] < 6.2:
             raise ValueError(f"File version {ver}, This converter only supports raw files of >v6.2")
         # return self._parse_values()
 
@@ -133,7 +133,9 @@ class RawMasterFile:
         if self.json:
             self.dict['Image Size'] = self.dict["Image Size in bytes"]
             self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
-            self.dict['nmod'] = int(self.dict['Geometry']['x']*self.dict['Geometry']['y']/2 )#ports not modules
+            self.dict['nmod'] = int(self.dict['Geometry']['x']*self.dict['Geometry']['y'] )#ports not modules
+            if self.dict['Detector Type'] == 'Eiger':
+                self.dict['nmod'] = self.dict['nmod'] // 2
         else:
             for field in int_fields.intersection(self.dict.keys()):
                 self.dict[field] = int(self.dict[field].split()[0])

@@ -66,6 +66,15 @@ def test_read_eiger_master_file():
 
     assert m['nmod'] == 4
 
+def test_read_mythen3_master_json_file():
+    fpath = Path(__file__).parent / "data/m3_master_0.json"
+    m = RawMasterFile(fpath)
+
+    assert m['Version'] == 7.1
+    assert m['Detector Type'] == 'Mythen3'
+    assert m['nmod'] == 1
+    #TODO! Add other fields
+
 def test_read_mythen3_master_file():
     fpath = Path(__file__).parent / "data/TiScan_master_0.raw"
     m = RawMasterFile(fpath)
