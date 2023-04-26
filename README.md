@@ -80,5 +80,5 @@ FILE_CONTENTS {
 We aim to follow NEP 29 regarding supported Python and Numpy versions https://numpy.org/neps/nep-0029-deprecation_policy.html#nep29
 
 At the moment this means:
-* Python 3.8-3.10
-* Numpy 1.19-1.21
+* Python 3.9-3.11
+* Numpy 1.22-1.24
