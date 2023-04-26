@@ -23,7 +23,7 @@ jobs:
     - name: Build conda pkg
       shell: bash -l {0}
       run: |
-          conda build .
+          conda mambabuild .
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
