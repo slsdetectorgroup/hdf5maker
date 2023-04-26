@@ -80,6 +80,13 @@ def test_read_one_mythen3_file():
     assert data.shape == (701,2560)
     assert data.dtype == np.uint32
 
+def test_read_one_mythen3_file_json():
+    fpath = Path(__file__).parent / "data/m3_master_0.json"
+    r = RawFile(fpath)
+    data = r.read()
+    assert data.shape == (1,3840)
+    assert data.dtype == np.uint32
+
 def test_read_one_mythen3_file_no_suffix():
     fpath = Path(__file__).parent / "data/TiScan_master_0"
     r = RawFile(fpath)
@@ -137,4 +144,4 @@ def test_read_fastquad():
     mask = np.load(Path(__file__).parent / "data/mask.npy")[0:514,0:514]
     pm = np.broadcast_to(mask[np.newaxis,:,:], image.shape)
     assert np.all(image[pm] == gold_standard[pm])
-    
+
