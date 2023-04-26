@@ -144,4 +144,4 @@ def test_read_fastquad():
     mask = np.load(Path(__file__).parent / "data/mask.npy")[0:514,0:514]
     pm = np.broadcast_to(mask[np.newaxis,:,:], image.shape)
     assert np.all(image[pm] == gold_standard[pm])
-    
+

@@ -61,7 +61,6 @@ class RawMasterFile:
         """
         self.dict = {}
         if self.fname.suffix == ".json":
-            print("JSON")
             with open(self.fname) as f:
                 self.dict = json.load(f)
             self.json = True

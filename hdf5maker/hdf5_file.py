@@ -69,7 +69,7 @@ def write_data_file(
         shape=data.shape,
         dtype=data.dtype,
         maxshape=(None, *data.shape[1:]),
-        chunks = (1, data.shape[1], data.shape[2]),
+        chunks = (1, *data.shape[1:]),
         **compression,
     )
     ds.attrs["image_nr_low"] = np.int32(image_nr_low)
@@ -89,10 +89,21 @@ def write_master_file(
     f = h5py.File(fname, "w")
     nxentry, nxdata = create_entry_and_data(f)
 
+
+
     if raw_master_file is not None:
         #add attrs
-        nxdata.attrs["exptime"] = raw_master_file['Exptime'].item()
-        nxdata.attrs["period"] = raw_master_file['Period'].item()
+        fields = {'exptime': 'Exptime', 
+                  'exptime1': 'Exptime1',
+                  'exptime2': 'Exptime2', 
+                  'exptime3': 'Exptime3', 
+                  'period': 'Period', 
+                 }
+
+        # Copy times from the raw master file
+        for attr,key in fields.items():
+            if key in raw_master_file.dict:
+                 nxdata.attrs[attr] = raw_master_file.dict[key].item()
 
     # Link written data sets:
     for i, fname in enumerate(data_files, start=1):
