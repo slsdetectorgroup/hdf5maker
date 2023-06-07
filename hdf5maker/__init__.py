@@ -1,5 +1,5 @@
 
-from .hdf5_file import write_data_file, write_master_file, get_output_fname, Hdf5File
+from .hdf5_file import write_data_file, write_master_file, get_output_fname, Hdf5File, write_simple_master_file
 from .io import read_bad_pixels, read_bad_channels
 
 #Imports related to raw files
