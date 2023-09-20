@@ -61,7 +61,12 @@ def write_data_file(
     compression=hdf5plugin.Bitshuffle(nelems=0, cname='lz4'),
 ):
     print(color.info(f"Writing: {fname}"))
-    f = h5py.File(fname, "w")
+    try:
+        f = h5py.File(fname, "w")
+    except Exception as inst:
+        print(color.error(f"Writing of: {fname} failed could not open file"))
+        raise inst
+
     nxentry, nxdata = create_entry_and_data(f)
     ds = nxdata.create_dataset(
         "data",
