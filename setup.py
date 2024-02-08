@@ -22,7 +22,7 @@ c_ext = setuptools.Extension("_hdf5maker",
 
 setuptools.setup(
     name="hdf5maker",
-    version= '2023.4.26.dev0',
+    version= '2023.9.21.dev0',
     author="Erik Frojdh",
     author_email="erik.frojdh@psi.ch",
     description="Eiger raw file to hdf5 converter",
