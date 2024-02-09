@@ -165,7 +165,13 @@ class RawFile:
                     self.redistribute = True
             self.dt = to_dtype(self.master["Dynamic Range"])
             self.dr = self.master["Dynamic Range"]
-            self.total_frames = self.master["Frames in File"]
+            #Look for the new field Frames in File and if this is not present
+            #fall back to Total Frames
+            try:
+                self.total_frames = self.master["Frames in File"]
+            except:
+                self.total_frames = self.master["Total Frames"]
+
             self.max_frames_per_file = self.master["Max Frames Per File"]
             self.file_geometry = self.master["Pixels"][::-1]
             self.frames_per_file = get_frames_per_file(

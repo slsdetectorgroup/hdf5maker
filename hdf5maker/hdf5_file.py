@@ -58,10 +58,15 @@ def write_data_file(
     fname,
     data,
     image_nr_low=1,
-    compression=hdf5plugin.Bitshuffle(nelems=0, lz4=True),
+    compression=hdf5plugin.Bitshuffle(nelems=0, cname='lz4'),
 ):
     print(color.info(f"Writing: {fname}"))
-    f = h5py.File(fname, "w")
+    try:
+        f = h5py.File(fname, "w")
+    except Exception as inst:
+        print(color.error(f"Writing of: {fname} failed could not open file"))
+        raise inst
+
     nxentry, nxdata = create_entry_and_data(f)
     ds = nxdata.create_dataset(
         "data",
@@ -76,6 +81,16 @@ def write_data_file(
     ds.attrs["image_nr_high"] = np.int32(image_nr_low + data.shape[0] - 1)
     f.close()
 
+def write_simple_master_file(fname, data_files):
+    print(color.info(f"Writing: {fname}"))
+    f = h5py.File(fname, "w")
+    nxentry, nxdata = create_entry_and_data(f)
+
+    # Link written data sets:
+    for i, fname in enumerate(data_files, start=1):
+        f[f"entry/data/data_{i:06d}"] = h5py.ExternalLink(fname, "entry/data/data")
+
+    f.close()
 
 def write_master_file(
     fname,
@@ -83,7 +98,7 @@ def write_master_file(
     pixel_mask=None,
     raw_master_file = None,
     i0 = None,
-    compression=hdf5plugin.Bitshuffle(nelems=0, lz4=True),
+    compression=hdf5plugin.Bitshuffle(nelems=0, cname='lz4'),
 ):
     print(color.info(f"Writing: {fname}"))
     f = h5py.File(fname, "w")
