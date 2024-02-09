@@ -166,7 +166,7 @@ class RawFile:
             self.dt = to_dtype(self.master["Dynamic Range"])
             self.dr = self.master["Dynamic Range"]
             #Look for the new field Frames in File and if this is not present
-            #fall back to Total Frames
+            #fall back to Total Frames. Frames in File was added in 6.3 pre json
             try:
                 self.total_frames = self.master["Frames in File"]
             except:

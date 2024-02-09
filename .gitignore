@@ -5,6 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
+.*
+play.py
 
 # Distribution / packaging
 .Python

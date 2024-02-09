@@ -102,6 +102,7 @@ class RawMasterFile:
                 "Image Size",
                 "Frame Padding",
                 "Total Frames",
+                "Frames in File",
                 "Dynamic Range",
                 "Ten Giga",
                 "Quad",
@@ -128,13 +129,14 @@ class RawMasterFile:
         for field in time_fields.intersection(self.dict.keys()):
             self.dict[field] = self.to_nanoseconds(self.dict[field])
 
-        #Parse bothx .json and .raw master files
+        #Parse both .json and .raw master files
         if self.json:
             self.dict['Image Size'] = self.dict["Image Size in bytes"]
             self.dict['Pixels'] = (self.dict['Pixels']['x'], self.dict['Pixels']['y'])
             self.dict['nmod'] = int(self.dict['Geometry']['x']*self.dict['Geometry']['y'] )#ports not modules
             if self.dict['Detector Type'] == 'Eiger':
                 self.dict['nmod'] = self.dict['nmod'] // 2
+                
         else:
             for field in int_fields.intersection(self.dict.keys()):
                 self.dict[field] = int(self.dict[field].split()[0])
