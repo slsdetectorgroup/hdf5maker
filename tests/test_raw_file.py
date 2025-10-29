@@ -145,3 +145,11 @@ def test_read_fastquad():
     pm = np.broadcast_to(mask[np.newaxis,:,:], image.shape)
     assert np.all(image[pm] == gold_standard[pm])
 
+def test_read_Eiger1M_v7():
+    fpath = Path(__file__).parent / "data/EigerV7_master_0.json"
+    image = RawFile(fpath).read()
+    assert image.shape == (1,1064, 1030)
+    gold_standard = np.load(Path(__file__).parent / "data/EigerV7_master_0.npy")
+    mask = np.load(Path(__file__).parent / "data/mask.npy")
+    pm = np.broadcast_to(mask[np.newaxis,:,:], image.shape)
+    assert np.all(image[pm] == gold_standard[pm])
