@@ -37,6 +37,5 @@ test:
 
 about:
   home: https://github.com/slsdetectorgroup/hdf5maker
-  license: GPL3
-  license_family: GPL
+  license: MIT
   summary: Raw to hdf5 converter for PSI Eiger detector
