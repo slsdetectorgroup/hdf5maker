@@ -37,4 +37,10 @@ setuptools.setup(
     ext_modules=[c_ext],
     scripts = ["raw2hdf5"],
     python_requires='>=3.9',
+    install_requires = [
+        'numpy >= 2.1',
+        'hdf5plugin',
+        'h5py',
+        'matplotlib'
+    ]
 )
