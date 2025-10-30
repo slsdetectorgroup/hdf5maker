@@ -20,7 +20,7 @@ requirements:
 
   host:
     - python 
-    - numpy=2.1
+    - numpy>=2.1
     - pip
     - setuptools
 
