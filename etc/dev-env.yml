@@ -4,7 +4,6 @@ channels:
 dependencies:
   - anaconda-client
   - conda-build
-  - conda-verify
-  - numpy>=2.1
+  - numpy
 
 
