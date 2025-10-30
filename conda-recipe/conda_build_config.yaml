@@ -1,5 +1,7 @@
 python:
+    - 3.12
     - 3.13
+    - 3.14
 
 c_compiler:
   - gcc                        # [linux]
