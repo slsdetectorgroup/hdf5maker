@@ -1,32 +1,37 @@
-name: Python Package Using Anaconda
+name: Build conda pkgs
 
-on: [push]
+on: push
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, ]
+        python-version: ["3.12",]
+
+    runs-on: ${{ matrix.platform }}
+
+    # The setup-miniconda action needs this to activate miniconda
+    defaults:
+      run:
+        shell: "bash -l {0}"
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup Miniconda
-      uses: conda-incubator/setup-miniconda@v2.1.1
-      with:
-        auto-update-conda: true
-        activate-environment: test
-        environment-file: .github/environment.yml
-        python-version: 3.9
-        auto-activate-base: false
-    - shell: bash -l {0}
-      run: |
-        conda info
-        conda list
-    - name: Build conda pkg
-      shell: bash -l {0}
-      run: |
-          conda mambabuild .
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: conda-pkgs
-        path: /usr/share/miniconda/envs/test/conda-bld/linux-64/*.tar.bz2
+      - uses: actions/checkout@v4
 
+      - name: Get conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          environment-file: etc/dev-env.yml
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: "true"
+
+  
+      - name: Disable upload
+        run: conda config --set anaconda_upload no
+
+      - name: Build
+        run: conda build conda-recipe 
