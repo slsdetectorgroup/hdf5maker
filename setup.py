@@ -4,8 +4,7 @@ import os
 import re
 import subprocess
 import sys
-sys.path.append('hdf5maker')
-from version import get_version
+
 
 import numpy as np
 
@@ -16,13 +15,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
 c_ext = setuptools.Extension("_hdf5maker",
                   sources = ["src/raw_file.c", "src/hdf5maker.c"],
                   libraries = ['c',],
-                  include_dirs=[np.get_include(),],
+                  include_dirs=[np.get_include()],
                   extra_compile_args = [],
+                  depends = ['src/raw_file.h', 'src/eiger_defs.h']
                   )
 
 setuptools.setup(
     name="hdf5maker",
-    version= '2024.2.9.dev0',
+    version= '2025.10.29',
     author="Erik Frojdh",
     author_email="erik.frojdh@psi.ch",
     description="Eiger raw file to hdf5 converter",
@@ -32,9 +32,15 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GPL License",
         "Operating System :: OS Independent",
     ],
     ext_modules=[c_ext],
+    scripts = ["raw2hdf5"],
     python_requires='>=3.9',
+    install_requires = [
+        'numpy >= 2.1',
+        'hdf5plugin',
+        'h5py',
+        'matplotlib'
+    ]
 )

@@ -1,0 +1,9 @@
+name: dev-environment
+channels:
+  - conda-forge
+dependencies:
+  - anaconda-client
+  - conda-build
+  - numpy
+
+

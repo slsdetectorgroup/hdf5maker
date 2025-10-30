@@ -11,6 +11,8 @@ import time
 from argparse import ArgumentParser
 import sys
 
+from importlib.metadata import version #to read version
+
 # Allow for running without X sever available
 import matplotlib
 matplotlib.use("Agg")
@@ -39,7 +41,14 @@ if __name__ == "__main__":
     fname_in = args.input
     args.path_out.mkdir(exist_ok=True)
     fname_out = h5m.get_output_fname(fname_in, args.path_out, args.custom_name)
-    print(h5m.color.info(f"hdfmaker-{h5m.version()} raw2hdf5 converter"))
+
+
+    try:
+        ver = version('hdf5maker')
+    except:
+        ver = 'developer'
+
+    print(h5m.color.info(f"hdfmaker-{ver} raw2hdf5 converter"))
 
     print(f"\n=== Converting Eiger Data ===")
     # Open the raw file to find out how much data we have

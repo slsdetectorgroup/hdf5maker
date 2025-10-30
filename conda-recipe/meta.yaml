@@ -2,23 +2,31 @@
 package:
   name: hdf5maker
   version: "{{ load_setup_py_data().version }}"
-  script: build.sh
+
+build:
+  number: 0
+  script: 
+    - {{ PYTHON }} -m pip install . -vv  # [not win]
 
 source:
-  path: ..
+  path: ../
 
 requirements:
   build:
-    - python {{python}}
-    - numpy  {{ numpy }}
+    - {{ compiler('c') }}
+    - {{ stdlib("c") }}
+
+
 
   host:
-    - python {{python}}
-    - numpy  {{ numpy }}
+    - python 
+    - numpy>=2.1
+    - pip
+    - setuptools
 
   run:
-    - python {{python}}
-    - numpy {{ numpy }}
+    - python
+    - {{ pin_compatible('numpy') }}
     - h5py
     - hdf5plugin
     - matplotlib
@@ -29,6 +37,5 @@ test:
 
 about:
   home: https://github.com/slsdetectorgroup/hdf5maker
-  license: GPL3
-  license_family: GPL
+  license: MIT
   summary: Raw to hdf5 converter for PSI Eiger detector

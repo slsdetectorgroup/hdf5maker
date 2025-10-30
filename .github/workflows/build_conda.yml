@@ -1,0 +1,37 @@
+name: Build conda pkgs
+
+on: push
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, ]
+        python-version: ["3.12",]
+
+    runs-on: ${{ matrix.platform }}
+
+    # The setup-miniconda action needs this to activate miniconda
+    defaults:
+      run:
+        shell: "bash -l {0}"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          environment-file: etc/dev-env.yml
+          miniforge-version: latest
+          channels: conda-forge
+          conda-remove-defaults: "true"
+
+  
+      - name: Disable upload
+        run: conda config --set anaconda_upload no
+
+      - name: Build
+        run: conda build conda-recipe 
