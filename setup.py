@@ -35,5 +35,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     ext_modules=[c_ext],
+    scripts = ["raw2hdf5"],
     python_requires='>=3.9',
 )
