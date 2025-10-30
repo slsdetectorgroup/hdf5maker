@@ -5,6 +5,6 @@ dependencies:
   - anaconda-client
   - conda-build
   - conda-verify
-  - numpy
+  - numpy>=2.1
 
 
