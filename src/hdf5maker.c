@@ -31,7 +31,7 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef hdf5maker_def = {
-    PyModuleDef_HEAD_INIT, "_hdf5maker", module_docstring, -1, module_methods};
+    PyModuleDef_HEAD_INIT, "hdf5maker._hdf5maker", module_docstring, -1, module_methods};
 
 /* Initialize the module */
 PyMODINIT_FUNC PyInit__hdf5maker(void) {

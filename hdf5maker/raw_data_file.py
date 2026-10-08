@@ -2,8 +2,8 @@ from pathlib import Path
 import numpy as np
 import os
 
-import _hdf5maker as _h5m
-from _hdf5maker import frame_header_dt
+from . import _hdf5maker as _h5m
+from ._hdf5maker import frame_header_dt
 import functools
 
 class RawDataFile:

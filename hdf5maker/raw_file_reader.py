@@ -7,7 +7,7 @@ import numpy as np
 from pathlib import Path
 import os
 
-import _hdf5maker as _h5m
+from . import _hdf5maker as _h5m
 
 frame_header_dt = _h5m.frame_header_dt
 

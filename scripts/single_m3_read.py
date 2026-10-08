@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.ion()
 
-from _hdf5maker import frame_header_dt
+from hdf5maker._hdf5maker import frame_header_dt
 
 new_file = '/home/l_frojdh/data/ms3/run_I0_master_0.json'
 # old_file = '/home/l_frojdh/software/hdf5maker/tests/data/TiScan_master_0.raw'

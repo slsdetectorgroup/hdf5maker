@@ -4,7 +4,7 @@ import numpy as np
 import setuptools
 
 c_ext = setuptools.Extension(
-    "_hdf5maker",
+    "hdf5maker._hdf5maker",
     sources=["src/raw_file.c", "src/hdf5maker.c"],
     include_dirs=[np.get_include()],
     depends=["src/raw_file.h", "src/eiger_defs.h"],
