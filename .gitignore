@@ -5,7 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
-.*
+
+# Editor and OS files
+.DS_Store
+.idea/
+
 play.py
 
 # Distribution / packaging

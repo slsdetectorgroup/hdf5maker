@@ -77,8 +77,10 @@ FILE_CONTENTS {
 
 ## Compatibility
 
-We aim to follow NEP 29 regarding supported Python and Numpy versions https://numpy.org/neps/nep-0029-deprecation_policy.html#nep29
+We aim to follow SPEC 0 regarding supported Python and NumPy versions https://scientific-python.org/specs/spec-0000/
 
 At the moment this means:
-* Python 3.9-3.11
-* Numpy 1.22-1.24
+* Python 3.12-3.14
+* NumPy >= 2.1
+
+Wheels on PyPI and packages on the slsdetectorgroup conda channel are built for Linux x86_64. On other platforms pip builds the C extension from source, which needs a C compiler.

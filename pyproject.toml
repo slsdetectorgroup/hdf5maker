@@ -6,3 +6,8 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel]
 
 build = "cp{312,313,314}-manylinux_x86_64"
+
+# Run the test suite against every built wheel. The test data lives in the
+# repository (not the sdist), so point pytest at the checked-out project.
+test-requires = ["pytest"]
+test-command = "pytest {project}/tests"

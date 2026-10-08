@@ -34,6 +34,12 @@ requirements:
 test:
   imports:
     - hdf5maker
+  source_files:
+    - tests
+  requires:
+    - pytest
+  commands:
+    - pytest tests
 
 about:
   home: https://github.com/slsdetectorgroup/hdf5maker
