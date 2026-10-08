@@ -1,17 +1,18 @@
-#!/usr/bin/env python
-import os
-import numpy as np
+"""Command line entry point for the raw2hdf5 converter.
+
+Installed as the ``raw2hdf5`` console script, see [project.scripts] in
+pyproject.toml. Can also be run as ``python -m hdf5maker.cli``.
+"""
+import multiprocessing as mp
+import sys
+import time
+from importlib.metadata import version  # to read version
 from pathlib import Path
+
+import numpy as np
+
 import hdf5maker as h5m
 from hdf5maker.tools import find_suffix
-import hdf5plugin
-import h5py
-import multiprocessing as mp
-import time
-from argparse import ArgumentParser
-import sys
-
-from importlib.metadata import version #to read version
 
 # Allow for running without X sever available
 import matplotlib
@@ -32,7 +33,7 @@ def convert_data_file(fname_in, fname_out, start, stop, fastquad):
     return {"reading": t1 - t0, "writing": t2 - t1}
 
 
-if __name__ == "__main__":
+def main():
     t_start = time.time()
 
     parser = h5m.cmd_line.get_argument_parser()
@@ -179,3 +180,7 @@ if __name__ == "__main__":
     t_stop = time.time()
 
     print(f"Processing took: {t_stop-t_start:.2f}s for {frames_to_read[-1][1]} frames")
+
+
+if __name__ == "__main__":
+    main()

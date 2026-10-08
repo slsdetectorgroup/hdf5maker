@@ -2,6 +2,39 @@
 requires = ["setuptools >= 77.0.3", "numpy"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "hdf5maker"
+version = "2025.10.29"
+description = "Eiger raw file to hdf5 converter"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Erik Frojdh", email = "erik.frojdh@psi.ch" }]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy >= 2.1",
+    "hdf5plugin",
+    "h5py",
+    "matplotlib",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.urls]
+Homepage = "https://github.com/slsdetectorgroup/hdf5maker"
+
+[project.scripts]
+raw2hdf5 = "hdf5maker.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["hdf5maker*"]
+
 
 [tool.cibuildwheel]
 

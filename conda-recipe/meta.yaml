@@ -1,7 +1,8 @@
+{% set pyproject = load_file_data("pyproject.toml") %}
 
 package:
   name: hdf5maker
-  version: "{{ load_setup_py_data().version }}"
+  version: "{{ pyproject["project"]["version"] }}"
 
 build:
   number: 0

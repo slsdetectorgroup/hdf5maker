@@ -1,51 +1,13 @@
-import setuptools
-from os.path import dirname, isdir, join
-import os
-import re
-import subprocess
-import sys
-
-
+# Package metadata lives in pyproject.toml. This file only describes the
+# C extension, which the [project] table cannot express.
 import numpy as np
+import setuptools
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
-
-
-c_ext = setuptools.Extension("_hdf5maker",
-                  sources = ["src/raw_file.c", "src/hdf5maker.c"],
-                  libraries = ['c',],
-                  include_dirs=[np.get_include()],
-                  extra_compile_args = [],
-                  depends = ['src/raw_file.h', 'src/eiger_defs.h']
-                  )
-
-setuptools.setup(
-    name="hdf5maker",
-    version= '2025.10.29',
-    author="Erik Frojdh",
-    author_email="erik.frojdh@psi.ch",
-    description="Eiger raw file to hdf5 converter",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/slsdetectorgroup/hdf5maker",
-    packages=setuptools.find_packages(),
-    license="MIT",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
-        "Programming Language :: Python :: 3.14",
-        "Operating System :: OS Independent",
-        "Topic :: Scientific/Engineering",
-    ],
-    ext_modules=[c_ext],
-    scripts = ["raw2hdf5"],
-    python_requires='>=3.12',
-    install_requires = [
-        'numpy >= 2.1',
-        'hdf5plugin',
-        'h5py',
-        'matplotlib'
-    ]
+c_ext = setuptools.Extension(
+    "_hdf5maker",
+    sources=["src/raw_file.c", "src/hdf5maker.c"],
+    include_dirs=[np.get_include()],
+    depends=["src/raw_file.h", "src/eiger_defs.h"],
 )
+
+setuptools.setup(ext_modules=[c_ext])
